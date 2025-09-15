@@ -19,6 +19,7 @@ It is the single source of truth for:
 - Provide the Supabase client via a **Vue injection key** and expose a `useSupabase()` hook.
 - Expose **stable, namespaced query keys** via `queryKeys` to avoid drift.
 - Ship **no UI and no global CSS**. Keep this package **small and stable**.
+- **Code organization:** **Strong preference that each code file should be less than 300 lines.** When files approach this limit, consider extracting utility functions, splitting complex initialization logic, or creating focused helper modules.
 
 > Downstream apps **must not** create their own Supabase or Query clients. They consume what app-core provides.
 
