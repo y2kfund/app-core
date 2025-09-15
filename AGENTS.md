@@ -1,14 +1,154 @@
 # AGENTS.md — y2kfund/app-core
 
-**Purpose:** This repo contains **app-core**, published as `@y2kfund/core`.  
-It is the single source of truth for:
-- **Supabase** client creation & provision
-- **TanStack Vue Query** setup (+ **IndexedDB** cache persistence)
-- **Injection keys & hooks** (`SUPABASE`, `useSupabase()`)
-- **Query key helpers** (`queryKeys`)
-- **Shared types & tiny utilities** (no UI)
+# AGENTS.md — y2kfund/app-core
 
-**Used by:** `app-dashboard`, `app-positions`, `app-trades`, and any other app/components in the org.
+**Purpose:** This repo contains **app-core**, published as `@y2kfund/core`.  
+It provides a simplified, all-in-one solution for:
+- **Supabase** client creation & provision
+- **TanStack Vue Query** setup with in-memory caching
+- **Query hooks** (`usePositionsQuery`, `useTradesQuery`) with built-in realtime updates
+- **Shared types** (Position, Trade, etc.)
+
+**Used by:** `app-dashboard`, `app-positions`, `app-trades`, and other apps in the org.
+
+---
+
+## 1) Responsibilities (simplified)
+
+- Initialize **exactly one** `SupabaseClient` and **one** `QueryClient` for the host app.
+- Install **TanStack Vue Query** with in-memory caching.
+- Provide the Supabase client via a **Vue injection key** and expose a `useSupabase()` hook.
+- Ship **ready-to-use query hooks** with built-in realtime subscriptions for positions and trades.
+- Export **all necessary types** and utilities from a single entry point.
+- **Everything in one file:** All code consolidated into `src/core.ts` for simplicity.
+
+> Downstream apps **must not** create their own Supabase or Query clients. They consume what app-core provides.
+
+---
+
+## 2) Public API (what downstream apps can import)
+
+```ts
+// @y2kfund/core
+export interface CoreOptions {
+  supabaseUrl: string
+  supabaseAnon: string
+  supabaseClient?: SupabaseClient
+  query?: {
+    staleTime?: number
+    gcTime?: number
+    refetchOnWindowFocus?: boolean
+    refetchOnReconnect?: boolean
+  }
+}
+
+/** Creates the core plugin that initializes Supabase + Query */
+export async function createCore(opts: CoreOptions): Promise<Plugin>
+
+/** Hook to access the provided Supabase client */
+export function useSupabase(): SupabaseClient
+
+/** Ready-to-use query hooks with realtime subscriptions */
+export function usePositionsQuery(accountId: string)
+export function useTradesQuery(accountId: string)
+
+/** Shared query keys */
+export const queryKeys: {
+  positions: (accountId: string) => readonly ['positions', string]
+  trades: (accountId: string) => readonly ['trades', string]
+}
+
+/** Data types */
+export interface Position { /* ... */ }
+export interface Trade { /* ... */ }
+```
+
+---
+
+## 3) Simplified File Structure
+
+```
+src/
+  core.ts             # ALL implementation in one file
+  index.ts            # single export: export * from './core'
+package.json
+vite.config.ts
+tsconfig.json
+README.md
+AGENTS.md
+```
+
+**Why one file?** 
+- Eliminates artificial abstractions and file splitting
+- Easier to understand and maintain
+- No need to navigate between multiple tiny files
+- All related functionality is co-located
+
+---
+
+## 4) Implementation highlights
+
+All code is in `src/core.ts`:
+
+- **Injection key & hook:** `SUPABASE` symbol and `useSupabase()` function
+- **Query keys:** Simple object with positions and trades keys
+- **Data types:** Position and Trade interfaces
+- **Query hooks:** `usePositionsQuery` and `useTradesQuery` with built-in realtime
+- **Core plugin:** `createCore()` function that sets everything up
+
+**Key simplifications made:**
+- ✅ Consolidated 6 separate files into 1
+- ✅ Removed unused query keys and features
+- ✅ Eliminated over-abstraction
+- ✅ Removed IndexedDB persistence (unnecessary complexity)
+- ✅ Built-in realtime subscriptions in query hooks
+- ✅ Single source of truth for all exports
+
+---
+
+## 5) Usage examples
+
+### In a host app (e.g., app-dashboard)
+```ts
+import { createApp } from 'vue'
+import App from './App.vue'
+import { createCore } from '@y2kfund/core'
+
+const core = await createCore({
+  supabaseUrl: import.meta.env.VITE_SUPA_URL,
+  supabaseAnon: import.meta.env.VITE_SUPA_ANON,
+  query: { staleTime: 60_000, refetchOnWindowFocus: false }
+})
+
+createApp(App).use(core).mount('#app')
+```
+
+### In a component (e.g., app-positions)
+```ts
+import { usePositionsQuery } from '@y2kfund/core'
+
+const q = usePositionsQuery(accountId)
+// q.data.value contains positions with automatic realtime updates
+// q._cleanup() unsubscribes from realtime when component unmounts
+```
+
+---
+
+## 6) Build & Package
+
+**Build:** ESM library only, external Vue and TanStack Query
+**Package:** Private GitHub Packages as `@y2kfund/core`  
+**Version:** SemVer for API stability
+
+---
+
+## 7) Definition of done
+
+- ✅ Single `src/core.ts` file with all functionality
+- ✅ `pnpm build` produces clean `dist/` ESM library
+- ✅ Query hooks work with realtime subscriptions
+- ✅ Published as `@y2kfund/core` on GitHub Packages
+- ✅ Downstream apps can consume without complexity
 
 ---
 

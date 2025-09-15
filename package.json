@@ -1,0 +1,38 @@
+{
+  "name": "@y2kfund/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": "github:y2kfund/app-core",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0",
+    "@tanstack/vue-query": "^5.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^4.5.4",
+    "vue": "^3.4.0",
+    "@tanstack/vue-query": "^5.0.0"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "release": "npm publish --access restricted",
+    "dev": "vite build --watch"
+  }
+}
