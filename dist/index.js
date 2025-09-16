@@ -10,11 +10,11 @@ function y() {
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-function w(e) {
+function Q(e) {
   const r = y(), o = p.positions(e), a = c(), s = l({
     queryKey: o,
     queryFn: async () => {
-      const { data: n, error: i } = await r.schema("hf").from("positions").select("*").eq("internal_account_id", e).order("symbol");
+      const { data: n, error: i } = await r.schema("hf").from("positions").select("*").order("symbol");
       if (i) throw i;
       return n || [];
     },
@@ -24,8 +24,8 @@ function w(e) {
     {
       schema: "hf",
       table: "positions",
-      event: "*",
-      filter: `internal_account_id=eq.${e}`
+      event: "*"
+      // listen to all changes on positions (no account filter)
     },
     () => a.invalidateQueries({ queryKey: o })
   ).subscribe();
@@ -37,7 +37,7 @@ function w(e) {
     }
   };
 }
-function Q(e) {
+function C(e) {
   const r = y(), o = p.trades(e), a = c(), s = l({
     queryKey: o,
     queryFn: async () => {
@@ -64,7 +64,7 @@ function Q(e) {
     }
   };
 }
-async function C(e) {
+async function T(e) {
   const {
     supabaseUrl: r,
     supabaseAnon: o,
@@ -88,9 +88,9 @@ async function C(e) {
 }
 export {
   f as SUPABASE,
-  C as createCore,
+  T as createCore,
   p as queryKeys,
-  w as usePositionsQuery,
+  Q as usePositionsQuery,
   y as useSupabase,
-  Q as useTradesQuery
+  C as useTradesQuery
 };

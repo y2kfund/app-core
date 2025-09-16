@@ -80,7 +80,6 @@ export function usePositionsQuery(accountId: string) {
         .schema('hf')
         .from('positions')
         .select('*')
-        .eq('internal_account_id', accountId)
         .order('symbol')
       
       if (error) throw error
@@ -97,7 +96,7 @@ export function usePositionsQuery(accountId: string) {
         schema: 'hf', 
         table: 'positions', 
         event: '*', 
-        filter: `internal_account_id=eq.${accountId}` 
+        // listen to all changes on positions (no account filter)
       },
       () => qc.invalidateQueries({ queryKey: key })
     )
