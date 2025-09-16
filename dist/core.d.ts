@@ -20,6 +20,7 @@ export declare function useSupabase(): SupabaseClient;
 export interface Position {
     id: number;
     internal_account_id: string;
+    legal_entity?: string;
     symbol: string;
     asset_class: string;
     qty: number;

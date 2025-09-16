@@ -37,6 +37,7 @@ export function useSupabase(): SupabaseClient {
 export interface Position {
   id: number
   internal_account_id: string
+  legal_entity?: string
   symbol: string
   asset_class: string
   qty: number
@@ -76,14 +77,32 @@ export function usePositionsQuery(accountId: string) {
   const query = useQuery({
     queryKey: key,
     queryFn: async (): Promise<Position[]> => {
-      const { data, error } = await supabase
-        .schema('hf')
-        .from('positions')
-        .select('*')
-        .order('symbol')
-      
-      if (error) throw error
-      return data || []
+      const [posRes, acctRes] = await Promise.all([
+        supabase
+          .schema('hf')
+          .from('positions')
+          .select('*')
+          .order('symbol'),
+        supabase
+          .schema('hf')
+          .from('accounts_master')
+          .select('internal_account_id, legal_entity')
+      ])
+
+      if (posRes.error) throw posRes.error
+      if (acctRes.error) throw acctRes.error
+
+      const accounts = new Map<string, string | null | undefined>(
+        (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
+      )
+
+      const rows = (posRes.data || []) as any[]
+      const enriched: Position[] = rows.map((r: any) => ({
+        ...r,
+        legal_entity: accounts.get(r.internal_account_id) || undefined,
+      }))
+
+      return enriched
     },
     staleTime: 60_000
   })

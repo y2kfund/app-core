@@ -1,22 +1,32 @@
-import { inject as b } from "vue";
-import { useQueryClient as c, useQuery as l, QueryClient as d, VueQueryPlugin as m } from "@tanstack/vue-query";
-import { createClient as h } from "@supabase/supabase-js";
-const f = Symbol("supabase"), p = {
+import { inject as y } from "vue";
+import { useQueryClient as l, useQuery as f, QueryClient as b, VueQueryPlugin as h } from "@tanstack/vue-query";
+import { createClient as _ } from "@supabase/supabase-js";
+const p = Symbol("supabase"), d = {
   positions: (e) => ["positions", e],
   trades: (e) => ["trades", e]
 };
-function y() {
-  const e = b(f, null);
+function m() {
+  const e = y(p, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-function Q(e) {
-  const r = y(), o = p.positions(e), a = c(), s = l({
+function T(e) {
+  const r = m(), o = d.positions(e), a = l(), s = f({
     queryKey: o,
     queryFn: async () => {
-      const { data: n, error: i } = await r.schema("hf").from("positions").select("*").order("symbol");
-      if (i) throw i;
-      return n || [];
+      const [n, i] = await Promise.all([
+        r.schema("hf").from("positions").select("*").order("symbol"),
+        r.schema("hf").from("accounts_master").select("internal_account_id, legal_entity")
+      ]);
+      if (n.error) throw n.error;
+      if (i.error) throw i.error;
+      const u = new Map(
+        (i.data || []).map((c) => [c.internal_account_id, c.legal_entity])
+      );
+      return (n.data || []).map((c) => ({
+        ...c,
+        legal_entity: u.get(c.internal_account_id) || void 0
+      }));
     },
     staleTime: 6e4
   }), t = r.channel(`positions:${e}`).on(
@@ -37,8 +47,8 @@ function Q(e) {
     }
   };
 }
-function C(e) {
-  const r = y(), o = p.trades(e), a = c(), s = l({
+function v(e) {
+  const r = m(), o = d.trades(e), a = l(), s = f({
     queryKey: o,
     queryFn: async () => {
       const { data: n, error: i } = await r.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
@@ -64,13 +74,13 @@ function C(e) {
     }
   };
 }
-async function T(e) {
+async function K(e) {
   const {
     supabaseUrl: r,
     supabaseAnon: o,
     supabaseClient: a,
     query: s
-  } = e, t = a ?? h(r, o), n = new d({
+  } = e, t = a ?? _(r, o), n = new b({
     defaultOptions: {
       queries: {
         staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
@@ -82,15 +92,15 @@ async function T(e) {
   });
   return {
     install(u) {
-      u.provide(f, t), u.use(m, { queryClient: n });
+      u.provide(p, t), u.use(h, { queryClient: n });
     }
   };
 }
 export {
-  f as SUPABASE,
-  T as createCore,
-  p as queryKeys,
-  Q as usePositionsQuery,
-  y as useSupabase,
-  C as useTradesQuery
+  p as SUPABASE,
+  K as createCore,
+  d as queryKeys,
+  T as usePositionsQuery,
+  m as useSupabase,
+  v as useTradesQuery
 };
