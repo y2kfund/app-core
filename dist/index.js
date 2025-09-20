@@ -3,14 +3,15 @@ import { useQueryClient as l, useQuery as f, QueryClient as b, VueQueryPlugin as
 import { createClient as _ } from "@supabase/supabase-js";
 const p = Symbol("supabase"), d = {
   positions: (e) => ["positions", e],
-  trades: (e) => ["trades", e]
+  trades: (e) => ["trades", e],
+  nlvMargin: (e) => ["nlvMargin", e]
 };
 function m() {
   const e = y(p, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-function T(e) {
+function C(e) {
   const r = m(), o = d.positions(e), a = l(), s = f({
     queryKey: o,
     queryFn: async () => {
@@ -47,7 +48,7 @@ function T(e) {
     }
   };
 }
-function v(e) {
+function T(e) {
   const r = m(), o = d.trades(e), a = l(), s = f({
     queryKey: o,
     queryFn: async () => {
@@ -100,7 +101,7 @@ export {
   p as SUPABASE,
   K as createCore,
   d as queryKeys,
-  T as usePositionsQuery,
+  C as usePositionsQuery,
   m as useSupabase,
-  v as useTradesQuery
+  T as useTradesQuery
 };

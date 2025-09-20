@@ -1,19 +1,33 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import dts from 'vite-plugin-dts'
+import { resolve } from 'path'
 
 export default defineConfig({
-  plugins: [vue(), dts()],
+  plugins: [
+    vue(), 
+    dts({
+      insertTypesEntry: true,
+      exclude: ['vite.config.ts']
+    })
+  ],
   build: {
     outDir: 'dist',
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: resolve(__dirname, 'src/core.ts'), // Main entry point
+        nlvMargin: resolve(__dirname, 'src/nlvMargin.ts') // New entry point
+      },
       name: 'Y2kfundCore',
-      formats: ['es'],
-      fileName: 'index'
+      formats: ['es']
     },
     rollupOptions: {
-      external: ['vue', '@tanstack/vue-query', '@supabase/supabase-js']
+      external: ['vue', '@tanstack/vue-query', '@supabase/supabase-js'],
+      output: {
+        globals: {
+          vue: 'Vue'
+        }
+      }
     }
   }
 })

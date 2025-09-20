@@ -15,6 +15,7 @@ export interface CoreOptions {
 export declare const queryKeys: {
     positions: (accountId: string) => readonly ["positions", string];
     trades: (accountId: string) => readonly ["trades", string];
+    nlvMargin: (limit: number) => readonly ["nlvMargin", number];
 };
 export declare function useSupabase(): SupabaseClient;
 export interface Position {

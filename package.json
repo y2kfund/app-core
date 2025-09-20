@@ -2,6 +2,16 @@
   "name": "@y2kfund/core",
   "version": "0.1.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./nlvMargin": {
+      "types": "./dist/nlvMargin.d.ts",
+      "import": "./dist/nlvMargin.js"
+    }
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

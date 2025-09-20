@@ -24,6 +24,7 @@ export interface CoreOptions {
 export const queryKeys = {
   positions: (accountId: string) => ['positions', accountId] as const,
   trades: (accountId: string) => ['trades', accountId] as const,
+  nlvMargin: (limit: number) => ['nlvMargin', limit] as const,
 }
 
 // Hook to access Supabase client
