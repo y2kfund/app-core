@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 // Injection key for Supabase
-export const SUPABASE: unique symbol = Symbol('supabase')
+export const SUPABASE: unique symbol = Symbol.for('y2kfund.supabase')
 
 // Core options interface
 export interface CoreOptions {

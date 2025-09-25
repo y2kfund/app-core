@@ -1,18 +1,18 @@
-import { inject as y } from "vue";
+import { inject as m } from "vue";
 import { useQueryClient as l, useQuery as f, QueryClient as b, VueQueryPlugin as h } from "@tanstack/vue-query";
 import { createClient as _ } from "@supabase/supabase-js";
-const p = Symbol("supabase"), d = {
+const d = Symbol.for("y2kfund.supabase"), p = {
   positions: (e) => ["positions", e],
   trades: (e) => ["trades", e],
   nlvMargin: (e) => ["nlvMargin", e]
 };
-function m() {
-  const e = y(p, null);
+function y() {
+  const e = m(d, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
 function C(e) {
-  const r = m(), o = d.positions(e), a = l(), s = f({
+  const r = y(), o = p.positions(e), a = l(), s = f({
     queryKey: o,
     queryFn: async () => {
       const [n, i] = await Promise.all([
@@ -49,7 +49,7 @@ function C(e) {
   };
 }
 function T(e) {
-  const r = m(), o = d.trades(e), a = l(), s = f({
+  const r = y(), o = p.trades(e), a = l(), s = f({
     queryKey: o,
     queryFn: async () => {
       const { data: n, error: i } = await r.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
@@ -93,15 +93,15 @@ async function K(e) {
   });
   return {
     install(u) {
-      u.provide(p, t), u.use(h, { queryClient: n });
+      u.provide(d, t), u.use(h, { queryClient: n });
     }
   };
 }
 export {
-  p as SUPABASE,
+  d as SUPABASE,
   K as createCore,
-  d as queryKeys,
+  p as queryKeys,
   C as usePositionsQuery,
-  m as useSupabase,
+  y as useSupabase,
   T as useTradesQuery
 };
