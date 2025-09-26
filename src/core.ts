@@ -86,7 +86,7 @@ export function usePositionsQuery(accountId: string) {
           .order('symbol'),
         supabase
           .schema('hf')
-          .from('accounts_master')
+          .from('user_accounts_master')
           .select('internal_account_id, legal_entity')
       ])
 

@@ -17,7 +17,7 @@ function C(e) {
     queryFn: async () => {
       const [n, i] = await Promise.all([
         r.schema("hf").from("positions").select("*").order("symbol"),
-        r.schema("hf").from("accounts_master").select("internal_account_id, legal_entity")
+        r.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity")
       ]);
       if (n.error) throw n.error;
       if (i.error) throw i.error;
