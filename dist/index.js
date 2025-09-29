@@ -1,36 +1,49 @@
-import { inject as m } from "vue";
-import { useQueryClient as l, useQuery as f, QueryClient as b, VueQueryPlugin as _ } from "@tanstack/vue-query";
-import { createClient as h } from "@supabase/supabase-js";
-const d = Symbol.for("y2kfund.supabase"), p = {
+import { inject as h } from "vue";
+import { useQueryClient as f, useQuery as y, QueryClient as g, VueQueryPlugin as _ } from "@tanstack/vue-query";
+import { createClient as w } from "@supabase/supabase-js";
+const d = Symbol.for("y2kfund.supabase"), b = {
   positions: (e) => ["positions", e],
   trades: (e) => ["trades", e],
   nlvMargin: (e) => ["nlvMargin", e]
 };
-function y() {
-  const e = m(d, null);
+function m() {
+  const e = h(d, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-function C(e) {
-  const r = y(), o = p.positions(e), a = l(), s = f({
-    queryKey: o,
+function T(e) {
+  const n = m(), i = b.positions(e), a = f(), s = y({
+    queryKey: i,
     queryFn: async () => {
-      const [n, i] = await Promise.all([
-        r.schema("hf").from("ibkr_positions").select("*").order("symbol"),
-        r.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity")
+      var l, p;
+      console.log("🔍 Querying positions with config:", {
+        accountId: e,
+        supabaseUrl: n.supabaseUrl,
+        schema: "hf",
+        table: "ibkr_positions"
+      });
+      const [t, o] = await Promise.all([
+        n.schema("hf").from("ibkr_positions").select("*").order("symbol"),
+        n.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity")
       ]);
-      if (n.error) throw n.error;
-      if (i.error) throw i.error;
+      if (t.error)
+        throw console.error("❌ Positions query error:", t.error), t.error;
+      if (o.error)
+        throw console.error("❌ Accounts query error:", o.error), o.error;
+      console.log("✅ Positions query success:", {
+        positionsCount: (l = t.data) == null ? void 0 : l.length,
+        accountsCount: (p = o.data) == null ? void 0 : p.length
+      });
       const u = new Map(
-        (i.data || []).map((c) => [c.internal_account_id, c.legal_entity])
+        (o.data || []).map((c) => [c.internal_account_id, c.legal_entity])
       );
-      return (n.data || []).map((c) => ({
+      return (t.data || []).map((c) => ({
         ...c,
         legal_entity: u.get(c.internal_account_id) || void 0
       }));
     },
     staleTime: 6e4
-  }), t = r.channel(`positions:${e}`).on(
+  }), r = n.channel(`positions:${e}`).on(
     "postgres_changes",
     {
       schema: "hf",
@@ -38,26 +51,26 @@ function C(e) {
       event: "*"
       // listen to all changes on positions (no account filter)
     },
-    () => a.invalidateQueries({ queryKey: o })
+    () => a.invalidateQueries({ queryKey: i })
   ).subscribe();
   return {
     ...s,
     _cleanup: () => {
-      var n;
-      return (n = t == null ? void 0 : t.unsubscribe) == null ? void 0 : n.call(t);
+      var t;
+      return (t = r == null ? void 0 : r.unsubscribe) == null ? void 0 : t.call(r);
     }
   };
 }
-function T(e) {
-  const r = y(), o = p.trades(e), a = l(), s = f({
-    queryKey: o,
+function P(e) {
+  const n = m(), i = b.trades(e), a = f(), s = y({
+    queryKey: i,
     queryFn: async () => {
-      const { data: n, error: i } = await r.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
-      if (i) throw i;
-      return n || [];
+      const { data: t, error: o } = await n.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
+      if (o) throw o;
+      return t || [];
     },
     staleTime: 6e4
-  }), t = r.channel(`trades:${e}`).on(
+  }), r = n.channel(`trades:${e}`).on(
     "postgres_changes",
     {
       schema: "hf",
@@ -65,23 +78,23 @@ function T(e) {
       event: "*",
       filter: `account_id=eq.${e}`
     },
-    () => a.invalidateQueries({ queryKey: o })
+    () => a.invalidateQueries({ queryKey: i })
   ).subscribe();
   return {
     ...s,
     _cleanup: () => {
-      var n;
-      return (n = t == null ? void 0 : t.unsubscribe) == null ? void 0 : n.call(t);
+      var t;
+      return (t = r == null ? void 0 : r.unsubscribe) == null ? void 0 : t.call(r);
     }
   };
 }
-async function k(e) {
+async function K(e) {
   const {
-    supabaseUrl: r,
-    supabaseAnon: o,
+    supabaseUrl: n,
+    supabaseAnon: i,
     supabaseClient: a,
     query: s
-  } = e, t = a ?? h(r, o), n = new b({
+  } = e, r = a ?? w(n, i), t = new g({
     defaultOptions: {
       queries: {
         staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
@@ -93,15 +106,15 @@ async function k(e) {
   });
   return {
     install(u) {
-      u.provide(d, t), u.use(_, { queryClient: n });
+      u.provide(d, r), u.use(_, { queryClient: t });
     }
   };
 }
 export {
   d as SUPABASE,
-  k as createCore,
-  p as queryKeys,
-  C as usePositionsQuery,
-  y as useSupabase,
-  T as useTradesQuery
+  K as createCore,
+  b as queryKeys,
+  T as usePositionsQuery,
+  m as useSupabase,
+  P as useTradesQuery
 };

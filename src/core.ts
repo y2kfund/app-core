@@ -78,6 +78,13 @@ export function usePositionsQuery(accountId: string) {
   const query = useQuery({
     queryKey: key,
     queryFn: async (): Promise<Position[]> => {
+      console.log('🔍 Querying positions with config:', {
+        accountId,
+        supabaseUrl: supabase.supabaseUrl,
+        schema: 'hf',
+        table: 'ibkr_positions'
+      })
+
       const [posRes, acctRes] = await Promise.all([
         supabase
           .schema('hf')
@@ -90,8 +97,19 @@ export function usePositionsQuery(accountId: string) {
           .select('internal_account_id, legal_entity')
       ])
 
-      if (posRes.error) throw posRes.error
-      if (acctRes.error) throw acctRes.error
+      if (posRes.error) {
+        console.error('❌ Positions query error:', posRes.error)
+        throw posRes.error
+      }
+      if (acctRes.error) {
+        console.error('❌ Accounts query error:', acctRes.error)
+        throw acctRes.error
+      }
+
+      console.log('✅ Positions query success:', {
+        positionsCount: posRes.data?.length,
+        accountsCount: acctRes.data?.length
+      })
 
       const accounts = new Map<string, string | null | undefined>(
         (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
