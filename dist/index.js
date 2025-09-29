@@ -1,6 +1,6 @@
 import { inject as m } from "vue";
-import { useQueryClient as l, useQuery as f, QueryClient as b, VueQueryPlugin as h } from "@tanstack/vue-query";
-import { createClient as _ } from "@supabase/supabase-js";
+import { useQueryClient as l, useQuery as f, QueryClient as b, VueQueryPlugin as _ } from "@tanstack/vue-query";
+import { createClient as h } from "@supabase/supabase-js";
 const d = Symbol.for("y2kfund.supabase"), p = {
   positions: (e) => ["positions", e],
   trades: (e) => ["trades", e],
@@ -16,7 +16,7 @@ function C(e) {
     queryKey: o,
     queryFn: async () => {
       const [n, i] = await Promise.all([
-        r.schema("hf").from("positions").select("*").order("symbol"),
+        r.schema("hf").from("ibkr_positions").select("*").order("symbol"),
         r.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity")
       ]);
       if (n.error) throw n.error;
@@ -34,7 +34,7 @@ function C(e) {
     "postgres_changes",
     {
       schema: "hf",
-      table: "positions",
+      table: "ibkr_positions",
       event: "*"
       // listen to all changes on positions (no account filter)
     },
@@ -75,13 +75,13 @@ function T(e) {
     }
   };
 }
-async function K(e) {
+async function k(e) {
   const {
     supabaseUrl: r,
     supabaseAnon: o,
     supabaseClient: a,
     query: s
-  } = e, t = a ?? _(r, o), n = new b({
+  } = e, t = a ?? h(r, o), n = new b({
     defaultOptions: {
       queries: {
         staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
@@ -93,13 +93,13 @@ async function K(e) {
   });
   return {
     install(u) {
-      u.provide(d, t), u.use(h, { queryClient: n });
+      u.provide(d, t), u.use(_, { queryClient: n });
     }
   };
 }
 export {
   d as SUPABASE,
-  K as createCore,
+  k as createCore,
   p as queryKeys,
   C as usePositionsQuery,
   y as useSupabase,
