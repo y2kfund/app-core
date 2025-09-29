@@ -1,18 +1,18 @@
 import { inject as h } from "vue";
 import { useQueryClient as f, useQuery as y, QueryClient as g, VueQueryPlugin as _ } from "@tanstack/vue-query";
 import { createClient as w } from "@supabase/supabase-js";
-const d = Symbol.for("y2kfund.supabase"), b = {
+const d = Symbol.for("y2kfund.supabase"), m = {
   positions: (e) => ["positions", e],
   trades: (e) => ["trades", e],
   nlvMargin: (e) => ["nlvMargin", e]
 };
-function m() {
+function b() {
   const e = h(d, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-function T(e) {
-  const n = m(), i = b.positions(e), a = f(), s = y({
+function P(e) {
+  const n = b(), i = m.positions(e), a = f(), s = y({
     queryKey: i,
     queryFn: async () => {
       var l, p;
@@ -20,10 +20,10 @@ function T(e) {
         accountId: e,
         supabaseUrl: n.supabaseUrl,
         schema: "hf",
-        table: "ibkr_positions"
+        table: "positions"
       });
       const [t, o] = await Promise.all([
-        n.schema("hf").from("ibkr_positions").select("*").order("symbol"),
+        n.schema("hf").from("positions").select("*").order("symbol"),
         n.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity")
       ]);
       if (t.error)
@@ -47,7 +47,7 @@ function T(e) {
     "postgres_changes",
     {
       schema: "hf",
-      table: "ibkr_positions",
+      table: "positions",
       event: "*"
       // listen to all changes on positions (no account filter)
     },
@@ -61,8 +61,8 @@ function T(e) {
     }
   };
 }
-function P(e) {
-  const n = m(), i = b.trades(e), a = f(), s = y({
+function K(e) {
+  const n = b(), i = m.trades(e), a = f(), s = y({
     queryKey: i,
     queryFn: async () => {
       const { data: t, error: o } = await n.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
@@ -88,7 +88,7 @@ function P(e) {
     }
   };
 }
-async function K(e) {
+async function O(e) {
   const {
     supabaseUrl: n,
     supabaseAnon: i,
@@ -112,9 +112,9 @@ async function K(e) {
 }
 export {
   d as SUPABASE,
-  K as createCore,
-  b as queryKeys,
-  T as usePositionsQuery,
-  m as useSupabase,
-  P as useTradesQuery
+  O as createCore,
+  m as queryKeys,
+  P as usePositionsQuery,
+  b as useSupabase,
+  K as useTradesQuery
 };

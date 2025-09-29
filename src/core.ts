@@ -82,13 +82,13 @@ export function usePositionsQuery(accountId: string) {
         accountId,
         supabaseUrl: supabase.supabaseUrl,
         schema: 'hf',
-        table: 'ibkr_positions'
+        table: 'positions'
       })
 
       const [posRes, acctRes] = await Promise.all([
         supabase
           .schema('hf')
-          .from('ibkr_positions')
+          .from('positions')
           .select('*')
           .order('symbol'),
         supabase
@@ -132,7 +132,7 @@ export function usePositionsQuery(accountId: string) {
     .on('postgres_changes',
       { 
         schema: 'hf', 
-        table: 'ibkr_positions', 
+        table: 'positions', 
         event: '*', 
         // listen to all changes on positions (no account filter)
       },
