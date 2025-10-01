@@ -20,9 +20,6 @@
     "README.md"
   ],
   "repository": "github:y2kfund/app-core",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "peerDependencies": {
     "vue": "^3.4.0",
     "@tanstack/vue-query": "^5.0.0"
@@ -40,9 +37,9 @@
     "@tanstack/vue-query": "^5.0.0"
   },
   "scripts": {
+    "_buildComment": "Builds library for use by other packages. All packages use Git URLs, not GitHub Packages, Hence 'publishConfig' and 'npm publish' are not needed",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "release": "npm publish --access restricted",
     "dev": "vite build --watch"
   }
 }
