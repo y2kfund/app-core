@@ -37,7 +37,8 @@
     "@tanstack/vue-query": "^5.0.0"
   },
   "scripts": {
-    "_buildComment": "Builds library for use by other packages. All packages use Git URLs, not GitHub Packages, Hence 'publishConfig' and 'npm publish' are not needed",
+    "_buildComment": "Builds library for use by other packages via Git URLs (e.g., @y2kfund/core@git+https://github.com/y2kfund/app-core.git). Hence in package.json 'publishConfig' and 'npm publish' are not needed",
+    "_vite build params": "Why --mode lib not added to vite build? app-core vite.config.ts is ALWAYS in library mode (no conditional config), so 'build' doesn't need '--mode lib' flag. Compare with app-positions and app-summary which have conditional configs.",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "dev": "vite build --watch"
