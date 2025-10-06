@@ -35,6 +35,7 @@ export interface Position {
     raw_json: string;
     fetched_at: string;
     comment: string;
+    cash_flow_on_entry: number;
 }
 export interface Trade {
     id: string;
