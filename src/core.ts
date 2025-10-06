@@ -80,16 +80,40 @@ export function usePositionsQuery(accountId: string) {
     queryFn: async (): Promise<Position[]> => {
       console.log('🔍 Querying positions with config:', {
         accountId,
-        supabaseUrl: supabase.supabaseUrl,
+        //supabaseUrl: supabase.supabaseUrl,
         schema: 'hf',
         table: 'positions'
       })
 
+      // Step 1: Get the latest fetched_at timestamp
+      const maxFetchedAtRes = await supabase
+        .schema('hf')
+        .from('positions')
+        .select('fetched_at')
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+
+      if (maxFetchedAtRes.error) {
+        console.error('❌ Max fetched_at query error:', maxFetchedAtRes.error)
+        throw maxFetchedAtRes.error
+      }
+
+      if (!maxFetchedAtRes.data || maxFetchedAtRes.data.length === 0) {
+        console.log('⚠️ No positions found in database')
+        return []
+      }
+
+      const latestFetchedAt = maxFetchedAtRes.data[0].fetched_at
+
+      console.log('📅 Latest fetched_at:', latestFetchedAt)
+
+      // Step 2: Fetch positions and accounts in parallel, filtering by latest fetched_at
       const [posRes, acctRes] = await Promise.all([
         supabase
           .schema('hf')
           .from('positions')
           .select('*')
+          .eq('fetched_at', latestFetchedAt)
           .order('symbol'),
         supabase
           .schema('hf')
@@ -107,6 +131,7 @@ export function usePositionsQuery(accountId: string) {
       }
 
       console.log('✅ Positions query success:', {
+        latestFetchedAt,
         positionsCount: posRes.data?.length,
         accountsCount: acctRes.data?.length
       })

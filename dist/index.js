@@ -1,49 +1,57 @@
-import { inject as h } from "vue";
-import { useQueryClient as f, useQuery as y, QueryClient as g, VueQueryPlugin as _ } from "@tanstack/vue-query";
-import { createClient as w } from "@supabase/supabase-js";
-const d = Symbol.for("y2kfund.supabase"), m = {
+import { inject as b } from "vue";
+import { useQueryClient as h, useQuery as p, QueryClient as w, VueQueryPlugin as q } from "@tanstack/vue-query";
+import { createClient as C } from "@supabase/supabase-js";
+const y = Symbol.for("y2kfund.supabase"), m = {
   positions: (e) => ["positions", e],
   trades: (e) => ["trades", e],
   nlvMargin: (e) => ["nlvMargin", e]
 };
-function b() {
-  const e = h(d, null);
+function g() {
+  const e = b(y, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
 function P(e) {
-  const n = b(), i = m.positions(e), a = f(), s = y({
-    queryKey: i,
+  const r = g(), a = m.positions(e), c = h(), t = p({
+    queryKey: a,
     queryFn: async () => {
-      var l, p;
+      var d, f;
       console.log("🔍 Querying positions with config:", {
         accountId: e,
-        supabaseUrl: n.supabaseUrl,
+        //supabaseUrl: supabase.supabaseUrl,
         schema: "hf",
         table: "positions"
       });
-      const [t, o] = await Promise.all([
-        n.schema("hf").from("positions").select("*").order("symbol"),
-        n.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity")
+      const s = await r.schema("hf").from("positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1);
+      if (s.error)
+        throw console.error("❌ Max fetched_at query error:", s.error), s.error;
+      if (!s.data || s.data.length === 0)
+        return console.log("⚠️ No positions found in database"), [];
+      const i = s.data[0].fetched_at;
+      console.log("📅 Latest fetched_at:", i);
+      const [n, u] = await Promise.all([
+        r.schema("hf").from("positions").select("*").eq("fetched_at", i).order("symbol"),
+        r.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity")
       ]);
-      if (t.error)
-        throw console.error("❌ Positions query error:", t.error), t.error;
-      if (o.error)
-        throw console.error("❌ Accounts query error:", o.error), o.error;
+      if (n.error)
+        throw console.error("❌ Positions query error:", n.error), n.error;
+      if (u.error)
+        throw console.error("❌ Accounts query error:", u.error), u.error;
       console.log("✅ Positions query success:", {
-        positionsCount: (l = t.data) == null ? void 0 : l.length,
-        accountsCount: (p = o.data) == null ? void 0 : p.length
+        latestFetchedAt: i,
+        positionsCount: (d = n.data) == null ? void 0 : d.length,
+        accountsCount: (f = u.data) == null ? void 0 : f.length
       });
-      const u = new Map(
-        (o.data || []).map((c) => [c.internal_account_id, c.legal_entity])
+      const _ = new Map(
+        (u.data || []).map((l) => [l.internal_account_id, l.legal_entity])
       );
-      return (t.data || []).map((c) => ({
-        ...c,
-        legal_entity: u.get(c.internal_account_id) || void 0
+      return (n.data || []).map((l) => ({
+        ...l,
+        legal_entity: _.get(l.internal_account_id) || void 0
       }));
     },
     staleTime: 6e4
-  }), r = n.channel(`positions:${e}`).on(
+  }), o = r.channel(`positions:${e}`).on(
     "postgres_changes",
     {
       schema: "hf",
@@ -51,26 +59,26 @@ function P(e) {
       event: "*"
       // listen to all changes on positions (no account filter)
     },
-    () => a.invalidateQueries({ queryKey: i })
+    () => c.invalidateQueries({ queryKey: a })
   ).subscribe();
   return {
-    ...s,
+    ...t,
     _cleanup: () => {
-      var t;
-      return (t = r == null ? void 0 : r.unsubscribe) == null ? void 0 : t.call(r);
+      var s;
+      return (s = o == null ? void 0 : o.unsubscribe) == null ? void 0 : s.call(o);
     }
   };
 }
 function K(e) {
-  const n = b(), i = m.trades(e), a = f(), s = y({
-    queryKey: i,
+  const r = g(), a = m.trades(e), c = h(), t = p({
+    queryKey: a,
     queryFn: async () => {
-      const { data: t, error: o } = await n.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
-      if (o) throw o;
-      return t || [];
+      const { data: s, error: i } = await r.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
+      if (i) throw i;
+      return s || [];
     },
     staleTime: 6e4
-  }), r = n.channel(`trades:${e}`).on(
+  }), o = r.channel(`trades:${e}`).on(
     "postgres_changes",
     {
       schema: "hf",
@@ -78,43 +86,43 @@ function K(e) {
       event: "*",
       filter: `account_id=eq.${e}`
     },
-    () => a.invalidateQueries({ queryKey: i })
+    () => c.invalidateQueries({ queryKey: a })
   ).subscribe();
   return {
-    ...s,
+    ...t,
     _cleanup: () => {
-      var t;
-      return (t = r == null ? void 0 : r.unsubscribe) == null ? void 0 : t.call(r);
+      var s;
+      return (s = o == null ? void 0 : o.unsubscribe) == null ? void 0 : s.call(o);
     }
   };
 }
 async function O(e) {
   const {
-    supabaseUrl: n,
-    supabaseAnon: i,
-    supabaseClient: a,
-    query: s
-  } = e, r = a ?? w(n, i), t = new g({
+    supabaseUrl: r,
+    supabaseAnon: a,
+    supabaseClient: c,
+    query: t
+  } = e, o = c ?? C(r, a), s = new w({
     defaultOptions: {
       queries: {
-        staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
-        gcTime: (s == null ? void 0 : s.gcTime) ?? 864e5,
-        refetchOnWindowFocus: (s == null ? void 0 : s.refetchOnWindowFocus) ?? !1,
-        refetchOnReconnect: (s == null ? void 0 : s.refetchOnReconnect) ?? !0
+        staleTime: (t == null ? void 0 : t.staleTime) ?? 6e4,
+        gcTime: (t == null ? void 0 : t.gcTime) ?? 864e5,
+        refetchOnWindowFocus: (t == null ? void 0 : t.refetchOnWindowFocus) ?? !1,
+        refetchOnReconnect: (t == null ? void 0 : t.refetchOnReconnect) ?? !0
       }
     }
   });
   return {
-    install(u) {
-      u.provide(d, r), u.use(_, { queryClient: t });
+    install(n) {
+      n.provide(y, o), n.use(q, { queryClient: s });
     }
   };
 }
 export {
-  d as SUPABASE,
+  y as SUPABASE,
   O as createCore,
   m as queryKeys,
   P as usePositionsQuery,
-  b as useSupabase,
+  g as useSupabase,
   K as useTradesQuery
 };
