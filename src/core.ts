@@ -25,6 +25,7 @@ export const queryKeys = {
   positions: (accountId: string) => ['positions', accountId] as const,
   trades: (accountId: string) => ['trades', accountId] as const,
   nlvMargin: (limit: number) => ['nlvMargin', limit] as const,
+  thesis: () => ['thesis'] as const,
 }
 
 // Hook to access Supabase client
@@ -54,6 +55,12 @@ export interface Position {
   comment: string
   cash_flow_on_entry: number
   cash_flow_on_exercise: number
+  thesis_id?: string | null
+  thesis?: {
+    id: string
+    title: string
+    description?: string
+  } | null
 }
 
 export interface Trade {
@@ -71,6 +78,41 @@ export interface Trade {
   updated_at: string
 }
 
+export interface Thesis {
+  id: string
+  title: string
+  description?: string
+  created_at?: string
+  updated_at?: string
+}
+
+// Thesis query hook
+export function useThesisQuery() {
+  const supabase = useSupabase()
+  const key = queryKeys.thesis()
+
+  const query = useQuery({
+    queryKey: key,
+    queryFn: async (): Promise<Thesis[]> => {
+      const { data, error } = await supabase
+        .schema('hf')
+        .from('thesis')
+        .select('*')
+        .order('title')
+
+      if (error) {
+        console.error('❌ Thesis query error:', error)
+        throw error
+      }
+
+      return data || []
+    },
+    staleTime: 300_000 // 5 minutes - thesis data doesn't change often
+  })
+
+  return query
+}
+
 // Positions query hook
 export function usePositionsQuery(accountId: string) {
   const supabase = useSupabase()
@@ -82,7 +124,6 @@ export function usePositionsQuery(accountId: string) {
     queryFn: async (): Promise<Position[]> => {
       console.log('🔍 Querying positions with config:', {
         accountId,
-        //supabaseUrl: supabase.supabaseUrl,
         schema: 'hf',
         table: 'positions'
       })
@@ -109,8 +150,8 @@ export function usePositionsQuery(accountId: string) {
 
       console.log('📅 Latest fetched_at:', latestFetchedAt)
 
-      // Step 2: Fetch positions and accounts in parallel, filtering by latest fetched_at
-      const [posRes, acctRes] = await Promise.all([
+      // Step 2: Fetch positions, accounts, and thesis in parallel
+      const [posRes, acctRes, thesisRes] = await Promise.all([
         supabase
           .schema('hf')
           .from('positions')
@@ -120,7 +161,11 @@ export function usePositionsQuery(accountId: string) {
         supabase
           .schema('hf')
           .from('user_accounts_master')
-          .select('internal_account_id, legal_entity')
+          .select('internal_account_id, legal_entity'),
+        supabase
+          .schema('hf')
+          .from('thesis')
+          .select('id, title, description')
       ])
 
       if (posRes.error) {
@@ -131,21 +176,31 @@ export function usePositionsQuery(accountId: string) {
         console.error('❌ Accounts query error:', acctRes.error)
         throw acctRes.error
       }
+      if (thesisRes.error) {
+        console.error('❌ Thesis query error:', thesisRes.error)
+        throw thesisRes.error
+      }
 
       console.log('✅ Positions query success:', {
         latestFetchedAt,
         positionsCount: posRes.data?.length,
-        accountsCount: acctRes.data?.length
+        accountsCount: acctRes.data?.length,
+        thesisCount: thesisRes.data?.length
       })
 
       const accounts = new Map<string, string | null | undefined>(
         (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
       )
 
+      const thesisMap = new Map<string, any>(
+        (thesisRes.data || []).map((t: any) => [t.id, { id: t.id, title: t.title, description: t.description }])
+      )
+
       const rows = (posRes.data || []) as any[]
       const enriched: Position[] = rows.map((r: any) => ({
         ...r,
         legal_entity: accounts.get(r.internal_account_id) || undefined,
+        thesis: r.thesis_id ? thesisMap.get(r.thesis_id) : null,
       }))
 
       return enriched
