@@ -36,6 +36,7 @@ export interface Position {
     fetched_at: string;
     comment: string;
     cash_flow_on_entry: number;
+    cash_flow_on_exercise: number;
 }
 export interface Trade {
     id: string;
