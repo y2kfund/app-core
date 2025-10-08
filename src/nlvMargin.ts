@@ -7,7 +7,7 @@ export interface nlvMargin {
   nlv_val: number
   fetched_at_val: string
   maintenance_val: number
-  internal_account_id?: string // Add this field for filtering
+  nlv_internal_account_id?: string // Add this field for filtering
 }
 
 // nlvMargin join query hook
@@ -40,14 +40,14 @@ export function useNlvMarginQuery(limit: number, userId?: string | null) {
 
       // Step 2: Apply access filter if user has specific account access
       if (accessibleAccountIds.length > 0 && result.length > 0) {
-        // Check if the data has internal_account_id field
-        if (result[0] && 'internal_account_id' in result[0]) {
+        // Check if the data has nlv_internal_account_id field
+        if (result[0] && 'nlv_internal_account_id' in result[0]) {
           console.log('🔒 Applying access filter for NLV/Margin data')
           result = result.filter(row => 
-            row.internal_account_id && accessibleAccountIds.includes(row.internal_account_id)
+            row.nlv_internal_account_id && accessibleAccountIds.includes(row.nlv_internal_account_id)
           )
         } else {
-          console.warn('⚠️ NLV/Margin data missing internal_account_id field, cannot filter by access')
+          console.warn('⚠️ NLV/Margin data missing nlv_internal_account_id field, cannot filter by access')
         }
       } else {
         console.log('🔓 No access filter applied - showing all NLV/Margin data')
