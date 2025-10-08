@@ -22,11 +22,10 @@ export interface CoreOptions {
 
 // Query keys
 export const queryKeys = {
-  positions: (accountId: string, userId?: string | null) => ['positions', accountId, userId] as const,
+  positions: (accountId: string) => ['positions', accountId] as const,
   trades: (accountId: string) => ['trades', accountId] as const,
   nlvMargin: (limit: number) => ['nlvMargin', limit] as const,
   thesis: () => ['thesis'] as const,
-  userAccountAccess: (userId: string) => ['userAccountAccess', userId] as const,
 }
 
 // Hook to access Supabase client
@@ -87,84 +86,6 @@ export interface Thesis {
   updated_at?: string
 }
 
-export interface UserAccountAccess {
-  id: string
-  user_id: string
-  internal_account_id: string
-  granted_at?: string
-  granted_by?: string
-  is_active: boolean
-  notes?: string
-  created_at?: string
-  updated_at?: string
-}
-
-// Hook to get current user's accessible account IDs
-export function useUserAccountAccess() {
-  const supabase = useSupabase()
-  
-  const query = useQuery({
-    queryKey: ['currentUserAccess'],
-    queryFn: async (): Promise<string[]> => {
-      try {
-        // Step 1: Check if there's an active session first
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session) {
-          console.log('⚠️ No active session, showing all positions')
-          return []
-        }
-
-        // Step 2: Get current logged-in user
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-        
-        if (authError) {
-          console.warn('⚠️ Auth error (showing all positions):', authError.message)
-          return []
-        }
-
-        if (!user) {
-          console.log('⚠️ No user logged in, showing all positions')
-          return []
-        }
-
-        console.log('👤 Current user ID:', user.id)
-
-        // Step 3: Query user_account_access table
-        const { data: accessData, error: accessError } = await supabase
-          .schema('hf')
-          .from('user_account_access')
-          .select('internal_account_id')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-
-        if (accessError) {
-          console.error('❌ Error fetching user account access:', accessError)
-          // On error, return empty array to show all data
-          return []
-        }
-
-        if (!accessData || accessData.length === 0) {
-          console.log('⚠️ No account access found for user, showing all positions')
-          return []
-        }
-
-        const accountIds = accessData.map((row: any) => row.internal_account_id)
-        console.log('✅ User has access to accounts:', accountIds)
-
-        return accountIds
-      } catch (error) {
-        console.warn('⚠️ Error in access control (showing all positions):', error)
-        return []
-      }
-    },
-    staleTime: 300_000, // 5 minutes - access doesn't change often
-    retry: 1 // Only retry once on failure
-  })
-
-  return query
-}
-
 // Thesis query hook
 export function useThesisQuery() {
   const supabase = useSupabase()
@@ -195,23 +116,16 @@ export function useThesisQuery() {
 // Positions query hook
 export function usePositionsQuery(accountId: string) {
   const supabase = useSupabase()
+  const key = queryKeys.positions(accountId)
   const qc = useQueryClient()
-  
-  // Get user's accessible account IDs
-  const { data: accessibleAccountIds, isLoading: isLoadingAccess } = useUserAccountAccess()
-
-  const key = queryKeys.positions(accountId, accessibleAccountIds?.value?.join(',') || null)
 
   const query = useQuery({
     queryKey: key,
     queryFn: async (): Promise<Position[]> => {
-      const accountIds = accessibleAccountIds?.value || []
-      
       console.log('🔍 Querying positions with config:', {
         accountId,
         schema: 'hf',
-        table: 'positions',
-        accessibleAccountIds: accountIds.length > 0 ? accountIds : 'all'
+        table: 'positions'
       })
 
       // Step 1: Get the latest fetched_at timestamp
@@ -236,26 +150,14 @@ export function usePositionsQuery(accountId: string) {
 
       console.log('📅 Latest fetched_at:', latestFetchedAt)
 
-      // Step 2: Build positions query with access filter
-      let positionsQuery = supabase
-        .schema('hf')
-        .from('positions')
-        .select('*')
-        .eq('fetched_at', latestFetchedAt)
-
-      // Apply access filter if user has specific account access
-      if (accountIds.length > 0) {
-        console.log('🔒 Applying access filter for accounts:', accountIds)
-        positionsQuery = positionsQuery.in('internal_account_id', accountIds)
-      } else {
-        console.log('🔓 No access filter applied - showing all positions')
-      }
-
-      positionsQuery = positionsQuery.order('symbol')
-
-      // Step 3: Fetch positions, accounts, and thesis in parallel
+      // Step 2: Fetch positions, accounts, and thesis in parallel
       const [posRes, acctRes, thesisRes] = await Promise.all([
-        positionsQuery,
+        supabase
+          .schema('hf')
+          .from('positions')
+          .select('*')
+          .eq('fetched_at', latestFetchedAt)
+          .order('symbol'),
         supabase
           .schema('hf')
           .from('user_accounts_master')
@@ -283,8 +185,7 @@ export function usePositionsQuery(accountId: string) {
         latestFetchedAt,
         positionsCount: posRes.data?.length,
         accountsCount: acctRes.data?.length,
-        thesisCount: thesisRes.data?.length,
-        filtered: accountIds.length > 0
+        thesisCount: thesisRes.data?.length
       })
 
       const accounts = new Map<string, string | null | undefined>(
@@ -304,8 +205,7 @@ export function usePositionsQuery(accountId: string) {
 
       return enriched
     },
-    staleTime: 60_000,
-    enabled: !isLoadingAccess // Wait for access check to complete
+    staleTime: 60_000
   })
 
   // Set up Supabase Realtime subscription

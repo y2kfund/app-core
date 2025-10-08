@@ -13,11 +13,10 @@ export interface CoreOptions {
     };
 }
 export declare const queryKeys: {
-    positions: (accountId: string, userId?: string | null) => readonly ["positions", string, string | null | undefined];
+    positions: (accountId: string) => readonly ["positions", string];
     trades: (accountId: string) => readonly ["trades", string];
     nlvMargin: (limit: number) => readonly ["nlvMargin", number];
     thesis: () => readonly ["thesis"];
-    userAccountAccess: (userId: string) => readonly ["userAccountAccess", string];
 };
 export declare function useSupabase(): SupabaseClient;
 export interface Position {
@@ -67,18 +66,6 @@ export interface Thesis {
     created_at?: string;
     updated_at?: string;
 }
-export interface UserAccountAccess {
-    id: string;
-    user_id: string;
-    internal_account_id: string;
-    granted_at?: string;
-    granted_by?: string;
-    is_active: boolean;
-    notes?: string;
-    created_at?: string;
-    updated_at?: string;
-}
-export declare function useUserAccountAccess(): import('@tanstack/vue-query').UseQueryReturnType<string[], Error>;
 export declare function useThesisQuery(): import('@tanstack/vue-query').UseQueryReturnType<Thesis[], Error>;
 export declare function usePositionsQuery(accountId: string): {
     _cleanup: () => Promise<"error" | "ok" | "timed out">;
