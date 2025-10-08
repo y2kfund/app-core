@@ -3,8 +3,9 @@ export interface nlvMargin {
     nlv_val: number;
     fetched_at_val: string;
     maintenance_val: number;
+    internal_account_id?: string;
 }
-export declare function useNlvMarginQuery(limit: number): {
+export declare function useNlvMarginQuery(limit: number, userId?: string | null): {
     _cleanup: () => void;
     data: import('vue').Ref<nlvMargin[], nlvMargin[]>;
     error: import('vue').Ref<Error, Error>;

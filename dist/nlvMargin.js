@@ -1,41 +1,54 @@
-import { useQueryClient as o, useQuery as y } from "@tanstack/vue-query";
-import { useSupabase as b } from "./index.js";
-function p(u) {
-  const i = b(), a = ["nlvMargin", u], n = o(), c = y({
-    queryKey: a,
+import { useQueryClient as y, useQuery as _ } from "@tanstack/vue-query";
+import { useSupabase as b, queryKeys as d, fetchUserAccessibleAccounts as h } from "./index.js";
+function m(a, r) {
+  const c = b(), o = d.nlvMargin(a, r), l = y(), f = _({
+    queryKey: o,
     queryFn: async () => {
-      const { data: t, error: s } = await i.schema("hf").rpc("get_nlv_margin", {
-        p_limit: 10
+      const e = await h(c, r);
+      console.log("🔍 Querying NLV/Margin with config:", {
+        limit: a,
+        userId: r || "none",
+        accessibleAccountIds: e.length > 0 ? e : "all"
       });
-      if (s) throw s;
-      return t || [];
+      const { data: n, error: u } = await c.schema("hf").rpc("get_nlv_margin", {
+        p_limit: a
+      });
+      if (u) throw u;
+      let s = n || [];
+      return e.length > 0 && s.length > 0 ? s[0] && "internal_account_id" in s[0] ? (console.log("🔒 Applying access filter for NLV/Margin data"), s = s.filter(
+        (g) => g.internal_account_id && e.includes(g.internal_account_id)
+      )) : console.warn("⚠️ NLV/Margin data missing internal_account_id field, cannot filter by access") : console.log("🔓 No access filter applied - showing all NLV/Margin data"), console.log("✅ NLV/Margin query success:", {
+        totalRows: (n == null ? void 0 : n.length) || 0,
+        filteredRows: s.length,
+        filtered: e.length > 0
+      }), s;
     },
     staleTime: 6e4
-  }), e = i.channel("netliquidation_all").on(
+  }), t = c.channel("netliquidation_all").on(
     "postgres_changes",
     {
       schema: "hf",
       table: "netliquidation",
       event: "*"
     },
-    () => n.invalidateQueries({ queryKey: a })
-  ).subscribe(), r = i.channel("maintenance_margin_all").on(
+    () => l.invalidateQueries({ queryKey: o })
+  ).subscribe(), i = c.channel("maintenance_margin_all").on(
     "postgres_changes",
     {
       schema: "hf",
       table: "maintenance_margin",
       event: "*"
     },
-    () => n.invalidateQueries({ queryKey: a })
+    () => l.invalidateQueries({ queryKey: o })
   ).subscribe();
   return {
-    ...c,
+    ...f,
     _cleanup: () => {
-      var t, s;
-      (t = e == null ? void 0 : e.unsubscribe) == null || t.call(e), (s = r == null ? void 0 : r.unsubscribe) == null || s.call(r);
+      var e, n;
+      (e = t == null ? void 0 : t.unsubscribe) == null || e.call(t), (n = i == null ? void 0 : i.unsubscribe) == null || n.call(i);
     }
   };
 }
 export {
-  p as useNlvMarginQuery
+  m as useNlvMarginQuery
 };

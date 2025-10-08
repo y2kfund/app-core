@@ -24,7 +24,7 @@ export interface CoreOptions {
 export const queryKeys = {
   positions: (accountId: string, userId?: string | null) => ['positions', accountId, userId] as const,
   trades: (accountId: string) => ['trades', accountId] as const,
-  nlvMargin: (limit: number) => ['nlvMargin', limit] as const,
+  nlvMargin: (limit: number, userId?: string | null) => ['nlvMargin', limit, userId] as const,
   thesis: () => ['thesis'] as const,
   userAccountAccess: (userId: string) => ['userAccountAccess', userId] as const,
 }
@@ -100,7 +100,7 @@ export interface UserAccountAccess {
 }
 
 // Helper function to fetch accessible account IDs for a user
-async function fetchUserAccessibleAccounts(
+export async function fetchUserAccessibleAccounts(
   supabase: SupabaseClient,
   userId: string | null | undefined
 ): Promise<string[]> {
