@@ -16,7 +16,8 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/core.ts'), // Main entry point
-        nlvMargin: resolve(__dirname, 'src/nlvMargin.ts') // New entry point
+        nlvMargin: resolve(__dirname, 'src/nlvMargin.ts'), // NLV Margin entry point
+        trades: resolve(__dirname, 'src/trades.ts') // Trades entry point
       },
       name: 'Y2kfundCore',
       formats: ['es']

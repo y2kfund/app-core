@@ -10,6 +10,10 @@
     "./nlvMargin": {
       "types": "./dist/nlvMargin.d.ts",
       "import": "./dist/nlvMargin.js"
+    },
+    "./trades": {
+      "types": "./dist/trades.d.ts",
+      "import": "./dist/trades.js"
     }
   },
   "main": "./dist/index.js",
