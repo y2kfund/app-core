@@ -106,45 +106,57 @@ export function useUserAccountAccess() {
   const query = useQuery({
     queryKey: ['currentUserAccess'],
     queryFn: async (): Promise<string[]> => {
-      // Step 1: Get current logged-in user
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
-      if (authError) {
-        console.error('❌ Error fetching current user:', authError)
-        // If no user is logged in, return empty array to show all data
+      try {
+        // Step 1: Check if there's an active session first
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session) {
+          console.log('⚠️ No active session, showing all positions')
+          return []
+        }
+
+        // Step 2: Get current logged-in user
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError) {
+          console.warn('⚠️ Auth error (showing all positions):', authError.message)
+          return []
+        }
+
+        if (!user) {
+          console.log('⚠️ No user logged in, showing all positions')
+          return []
+        }
+
+        console.log('👤 Current user ID:', user.id)
+
+        // Step 3: Query user_account_access table
+        const { data: accessData, error: accessError } = await supabase
+          .schema('hf')
+          .from('user_account_access')
+          .select('internal_account_id')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+
+        if (accessError) {
+          console.error('❌ Error fetching user account access:', accessError)
+          // On error, return empty array to show all data
+          return []
+        }
+
+        if (!accessData || accessData.length === 0) {
+          console.log('⚠️ No account access found for user, showing all positions')
+          return []
+        }
+
+        const accountIds = accessData.map((row: any) => row.internal_account_id)
+        console.log('✅ User has access to accounts:', accountIds)
+
+        return accountIds
+      } catch (error) {
+        console.warn('⚠️ Error in access control (showing all positions):', error)
         return []
       }
-
-      if (!user) {
-        console.log('⚠️ No user logged in, showing all positions')
-        return []
-      }
-
-      console.log('👤 Current user ID:', user.id)
-
-      // Step 2: Query user_account_access table
-      const { data: accessData, error: accessError } = await supabase
-        .schema('hf')
-        .from('user_account_access')
-        .select('internal_account_id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-
-      if (accessError) {
-        console.error('❌ Error fetching user account access:', accessError)
-        // On error, return empty array to show all data
-        return []
-      }
-
-      if (!accessData || accessData.length === 0) {
-        console.log('⚠️ No account access found for user, showing all positions')
-        return []
-      }
-
-      const accountIds = accessData.map((row: any) => row.internal_account_id)
-      console.log('✅ User has access to accounts:', accountIds)
-
-      return accountIds
     },
     staleTime: 300_000, // 5 minutes - access doesn't change often
     retry: 1 // Only retry once on failure
