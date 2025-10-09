@@ -8,6 +8,7 @@ export interface nlvMargin {
   fetched_at_val: string
   maintenance_val: number
   nlv_internal_account_id?: string // Add this field for filtering
+  legal_entity?: string // Legal entity name from user_accounts_master
 }
 
 // nlvMargin join query hook
