@@ -4,6 +4,7 @@ export interface nlvMargin {
     fetched_at_val: string;
     maintenance_val: number;
     nlv_internal_account_id?: string;
+    excess_maintenance_margin?: number;
     legal_entity?: string;
 }
 export declare function useNlvMarginQuery(limit: number, userId?: string | null): {

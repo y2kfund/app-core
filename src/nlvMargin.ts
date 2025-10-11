@@ -8,6 +8,7 @@ export interface nlvMargin {
   fetched_at_val: string
   maintenance_val: number
   nlv_internal_account_id?: string // Add this field for filtering
+  excess_maintenance_margin?: number // Calculated field
   legal_entity?: string // Legal entity name from user_accounts_master
 }
 
@@ -31,7 +32,7 @@ export function useNlvMarginQuery(limit: number, userId?: string | null) {
 
       const { data, error } = await supabase
       .schema('hf')
-      .rpc('get_nlv_margin', {
+      .rpc('get_nlv_margin_with_excess', {
         p_limit: limit
       })
 
