@@ -10,7 +10,7 @@ function q(a, r) {
         userId: r || "none",
         accessibleAccountIds: e.length > 0 ? e : "all"
       });
-      const { data: n, error: u } = await c.schema("hf").rpc("get_nlv_margin_with_excess", {
+      const { data: n, error: u } = await c.schema("hf").rpc("get_nlv_margin", {
         p_limit: a
       });
       if (u) throw u;
