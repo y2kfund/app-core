@@ -150,7 +150,7 @@ export function useThesisQuery() {
     queryFn: async (): Promise<Thesis[]> => {
       const { data, error } = await supabase
         .schema('hf')
-        .from('thesis')
+        .from('thesisMaster')
         .select('*')
         .order('title')
 
@@ -235,7 +235,7 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
           .select('internal_account_id, legal_entity'),
         supabase
           .schema('hf')
-          .from('thesis')
+          .from('thesisMaster')
           .select('id, title, description')
       ])
 

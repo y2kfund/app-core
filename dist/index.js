@@ -1,6 +1,6 @@
 import { inject as v } from "vue";
 import { useQuery as g, useQueryClient as q, QueryClient as C, VueQueryPlugin as F } from "@tanstack/vue-query";
-import { createClient as K } from "@supabase/supabase-js";
+import { createClient as M } from "@supabase/supabase-js";
 const A = Symbol.for("y2kfund.supabase"), y = {
   positions: (e, t) => ["positions", e, t],
   trades: (e) => ["trades", e],
@@ -13,7 +13,7 @@ function m() {
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-async function M(e, t) {
+async function K(e, t) {
   if (!t)
     return console.log("⚠️ No userId provided, showing all positions"), [];
   try {
@@ -34,7 +34,7 @@ function x() {
   return g({
     queryKey: t,
     queryFn: async () => {
-      const { data: i, error: s } = await e.schema("hf").from("thesis").select("*").order("title");
+      const { data: i, error: s } = await e.schema("hf").from("thesisMaster").select("*").order("title");
       if (s)
         throw console.error("❌ Thesis query error:", s), s;
       return i || [];
@@ -48,7 +48,7 @@ function E(e, t) {
     queryKey: i,
     queryFn: async () => {
       var _, b, w;
-      const r = await M(o, t);
+      const r = await K(o, t);
       console.log("🔍 Querying positions with config:", {
         accountId: e,
         schema: "hf",
@@ -68,7 +68,7 @@ function E(e, t) {
       const [h, d, f] = await Promise.all([
         u,
         o.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        o.schema("hf").from("thesis").select("id, title, description")
+        o.schema("hf").from("thesisMaster").select("id, title, description")
       ]);
       if (h.error)
         throw console.error("❌ Positions query error:", h.error), h.error;
@@ -147,7 +147,7 @@ async function U(e) {
     supabaseAnon: o,
     supabaseClient: i,
     query: s
-  } = e, a = i ?? K(t, o), n = new C({
+  } = e, a = i ?? M(t, o), n = new C({
     defaultOptions: {
       queries: {
         staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
@@ -166,7 +166,7 @@ async function U(e) {
 export {
   A as SUPABASE,
   U as createCore,
-  M as fetchUserAccessibleAccounts,
+  K as fetchUserAccessibleAccounts,
   y as queryKeys,
   E as usePositionsQuery,
   m as useSupabase,
