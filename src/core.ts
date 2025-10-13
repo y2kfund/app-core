@@ -56,6 +56,7 @@ export interface Position {
   comment: string
   cash_flow_on_entry: number
   cash_flow_on_exercise: number
+  be_price: number | null
   thesis_id?: string | null
   thesis?: {
     id: string
