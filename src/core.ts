@@ -301,8 +301,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
 
       const positionRows = (posRes.data || []) as any[]
       const enriched: Position[] = positionRows.map((r: any) => {
-        // For stocks, use conid; for options, use undConid
-        const lookupConid = r.asset_class === 'STK' ? r.conid : r.undConid
+        // For stocks and funds, use conid; for options, use undConid (underlying stock conid)
+        const lookupConid = (r.asset_class === 'STK' || r.asset_class === 'FUND') ? r.conid : r.undConid
         const marketPriceData = marketPriceMap.get(lookupConid)
         
         return {

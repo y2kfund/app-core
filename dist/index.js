@@ -13,20 +13,20 @@ function w() {
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-async function O(e, r) {
+async function N(e, r) {
   if (!r)
     return console.log("⚠️ No userId provided, showing all positions"), [];
   try {
     console.log("👤 Fetching accessible accounts for user:", r);
-    const { data: t, error: i } = await e.schema("hf").from("user_account_access").select("internal_account_id").eq("user_id", r).eq("is_active", !0);
+    const { data: o, error: i } = await e.schema("hf").from("user_account_access").select("internal_account_id").eq("user_id", r).eq("is_active", !0);
     if (i)
       return console.error("❌ Error fetching user account access:", i), [];
-    if (!t || t.length === 0)
+    if (!o || o.length === 0)
       return console.log("⚠️ No account access found for user, showing all positions"), [];
-    const s = t.map((a) => a.internal_account_id);
+    const s = o.map((a) => a.internal_account_id);
     return console.log("✅ User has access to accounts:", s), s;
-  } catch (t) {
-    return console.error("❌ Exception fetching account access:", t), [];
+  } catch (o) {
+    return console.error("❌ Exception fetching account access:", o), [];
   }
 }
 function W() {
@@ -44,11 +44,11 @@ function W() {
   });
 }
 function j(e, r) {
-  const t = w(), i = b.positions(e, r), s = C(), a = m({
+  const o = w(), i = b.positions(e, r), s = C(), a = m({
     queryKey: i,
     queryFn: async () => {
       var q, A, k;
-      const n = await O(t, r);
+      const n = await N(o, r);
       console.log("🔍 Querying positions with config:", {
         accountId: e,
         schema: "hf",
@@ -56,19 +56,19 @@ function j(e, r) {
         userId: r || "none",
         accessibleAccountIds: n.length > 0 ? n : "all"
       });
-      const l = await t.schema("hf").from("positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1);
+      const l = await o.schema("hf").from("positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1);
       if (l.error)
         throw console.error("❌ Max fetched_at query error:", l.error), l.error;
       if (!l.data || l.data.length === 0)
         return console.log("⚠️ No positions found in database"), [];
-      const y = l.data[0].fetched_at;
-      console.log("📅 Latest fetched_at:", y);
-      let h = t.schema("hf").from("positions").select("*").eq("fetched_at", y);
+      const _ = l.data[0].fetched_at;
+      console.log("📅 Latest fetched_at:", _);
+      let h = o.schema("hf").from("positions").select("*").eq("fetched_at", _);
       n.length > 0 ? (console.log("🔒 Applying access filter for accounts:", n), h = h.in("internal_account_id", n)) : console.log("🔓 No access filter applied - showing all positions"), h = h.order("symbol");
       const [d, f, p] = await Promise.all([
         h,
-        t.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        t.schema("hf").from("thesisMaster").select("id, title, description")
+        o.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
+        o.schema("hf").from("thesisMaster").select("id, title, description")
       ]);
       if (d.error)
         throw console.error("❌ Positions query error:", d.error), d.error;
@@ -77,9 +77,9 @@ function j(e, r) {
       if (p.error)
         throw console.error("❌ Thesis query error:", p.error), p.error;
       let g = [];
-      const _ = await t.schema("hf").rpc("get_latest_market_prices");
-      _.error ? console.error("❌ Market price query error:", _.error) : (g = _.data || [], console.log(`📊 Fetched ${g.length} latest market prices`)), console.log("✅ Positions query success:", {
-        latestFetchedAt: y,
+      const y = await o.schema("hf").rpc("get_latest_market_prices");
+      y.error ? console.error("❌ Market price query error:", y.error) : (g = y.data || [], console.log(`📊 Fetched ${g.length} latest market prices`)), console.log("✅ Positions query success:", {
+        latestFetchedAt: _,
         positionsCount: (q = d.data) == null ? void 0 : q.length,
         accountsCount: (A = f.data) == null ? void 0 : A.length,
         thesisCount: (k = p.data) == null ? void 0 : k.length,
@@ -88,28 +88,28 @@ function j(e, r) {
         accessibleAccounts: n.length > 0 ? n : "all"
       });
       const M = new Map(
-        (f.data || []).map((o) => [o.internal_account_id, o.legal_entity])
+        (f.data || []).map((t) => [t.internal_account_id, t.legal_entity])
       ), Q = new Map(
-        (p.data || []).map((o) => [o.id, { id: o.id, title: o.title, description: o.description }])
+        (p.data || []).map((t) => [t.id, { id: t.id, title: t.title, description: t.description }])
       ), v = new Map(
-        g.map((o) => [
-          o.conid,
-          { price: o.market_price, fetchedAt: o.last_fetched_at }
+        g.map((t) => [
+          t.conid,
+          { price: t.market_price, fetchedAt: t.last_fetched_at }
         ])
       );
-      return (d.data || []).map((o) => {
-        const F = o.asset_class === "STK" ? o.conid : o.undConid, u = v.get(F);
+      return (d.data || []).map((t) => {
+        const F = t.asset_class === "STK" || t.asset_class === "FUND" ? t.conid : t.undConid, u = v.get(F);
         return {
-          ...o,
-          legal_entity: M.get(o.internal_account_id) || void 0,
-          thesis: o.thesis_id ? Q.get(o.thesis_id) : null,
+          ...t,
+          legal_entity: M.get(t.internal_account_id) || void 0,
+          thesis: t.thesis_id ? Q.get(t.thesis_id) : null,
           market_price: (u == null ? void 0 : u.price) || null,
           market_price_fetched_at: (u == null ? void 0 : u.fetchedAt) || null
         };
       });
     },
     staleTime: 6e4
-  }), c = t.channel(`positions:${e}`).on(
+  }), c = o.channel(`positions:${e}`).on(
     "postgres_changes",
     {
       schema: "hf",
@@ -128,8 +128,8 @@ function j(e, r) {
   };
 }
 function B(e) {
-  const r = w(), t = b.trades(e), i = C(), s = m({
-    queryKey: t,
+  const r = w(), o = b.trades(e), i = C(), s = m({
+    queryKey: o,
     queryFn: async () => {
       const { data: c, error: n } = await r.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
       if (n) throw n;
@@ -144,7 +144,7 @@ function B(e) {
       event: "*",
       filter: `account_id=eq.${e}`
     },
-    () => i.invalidateQueries({ queryKey: t })
+    () => i.invalidateQueries({ queryKey: o })
   ).subscribe();
   return {
     ...s,
@@ -154,13 +154,13 @@ function B(e) {
     }
   };
 }
-async function L(e) {
+async function D(e) {
   const {
     supabaseUrl: r,
-    supabaseAnon: t,
+    supabaseAnon: o,
     supabaseClient: i,
     query: s
-  } = e, a = i ?? S(r, t), c = new K({
+  } = e, a = i ?? S(r, o), c = new K({
     defaultOptions: {
       queries: {
         staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
@@ -178,8 +178,8 @@ async function L(e) {
 }
 export {
   T as SUPABASE,
-  L as createCore,
-  O as fetchUserAccessibleAccounts,
+  D as createCore,
+  N as fetchUserAccessibleAccounts,
   b as queryKeys,
   j as usePositionsQuery,
   w as useSupabase,
