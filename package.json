@@ -14,6 +14,10 @@
     "./trades": {
       "types": "./dist/trades.d.ts",
       "import": "./dist/trades.js"
+    },
+    "./tasks": {
+      "types": "./dist/tasks.d.ts",
+      "import": "./dist/tasks.js"
     }
   },
   "main": "./dist/index.js",

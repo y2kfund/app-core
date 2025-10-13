@@ -15,9 +15,10 @@ export default defineConfig({
     outDir: 'dist',
     lib: {
       entry: {
-        index: resolve(__dirname, 'src/core.ts'), // Main entry point
-        nlvMargin: resolve(__dirname, 'src/nlvMargin.ts'), // NLV Margin entry point
-        trades: resolve(__dirname, 'src/trades.ts') // Trades entry point
+        index: resolve(__dirname, 'src/core.ts'),
+        nlvMargin: resolve(__dirname, 'src/nlvMargin.ts'),
+        trades: resolve(__dirname, 'src/trades.ts'),
+        tasks: resolve(__dirname, 'src/tasks.ts') // ✅ Already exists
       },
       name: 'Y2kfundCore',
       formats: ['es']
