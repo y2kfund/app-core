@@ -40,6 +40,8 @@ export interface Position {
     cash_flow_on_entry: number;
     cash_flow_on_exercise: number;
     be_price: number | null;
+    market_price?: number | null;
+    market_price_fetched_at?: string | null;
     thesis_id?: string | null;
     thesis?: {
         id: string;

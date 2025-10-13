@@ -57,6 +57,8 @@ export interface Position {
   cash_flow_on_entry: number
   cash_flow_on_exercise: number
   be_price: number | null
+  market_price?: number | null
+  market_price_fetched_at?: string | null
   thesis_id?: string | null
   thesis?: {
     id: string
@@ -253,11 +255,28 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         throw thesisRes.error
       }
 
+      // Step 5: Fetch the latest market prices using database function
+      // The function returns all rows with the most recent last_fetched_at timestamp
+      let marketPriceData: any[] = []
+      
+      const marketPriceRes = await supabase
+        .schema('hf')
+        .rpc('get_latest_market_prices')
+
+      if (marketPriceRes.error) {
+        console.error('❌ Market price query error:', marketPriceRes.error)
+        // Don't throw - market prices are optional
+      } else {
+        marketPriceData = marketPriceRes.data || []
+        console.log(`📊 Fetched ${marketPriceData.length} latest market prices`)
+      }
+
       console.log('✅ Positions query success:', {
         latestFetchedAt,
         positionsCount: posRes.data?.length,
         accountsCount: acctRes.data?.length,
         thesisCount: thesisRes.data?.length,
+        marketPricesCount: marketPriceData.length,
         filtered: accessibleAccountIds.length > 0,
         accessibleAccounts: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
@@ -270,12 +289,30 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         (thesisRes.data || []).map((t: any) => [t.id, { id: t.id, title: t.title, description: t.description }])
       )
 
-      const rows = (posRes.data || []) as any[]
-      const enriched: Position[] = rows.map((r: any) => ({
-        ...r,
-        legal_entity: accounts.get(r.internal_account_id) || undefined,
-        thesis: r.thesis_id ? thesisMap.get(r.thesis_id) : null,
-      }))
+      // Create market price map by conid
+      // For stocks: use conid directly
+      // For options: use undConid (underlying conid)
+      const marketPriceMap = new Map<string, { price: number, fetchedAt: string }>(
+        marketPriceData.map((mp: any) => [
+          mp.conid as string, 
+          { price: mp.market_price, fetchedAt: mp.last_fetched_at }
+        ])
+      )
+
+      const positionRows = (posRes.data || []) as any[]
+      const enriched: Position[] = positionRows.map((r: any) => {
+        // For stocks, use conid; for options, use undConid
+        const lookupConid = r.asset_class === 'STK' ? r.conid : r.undConid
+        const marketPriceData = marketPriceMap.get(lookupConid)
+        
+        return {
+          ...r,
+          legal_entity: accounts.get(r.internal_account_id) || undefined,
+          thesis: r.thesis_id ? thesisMap.get(r.thesis_id) : null,
+          market_price: marketPriceData?.price || null,
+          market_price_fetched_at: marketPriceData?.fetchedAt || null,
+        }
+      })
 
       return enriched
     },
