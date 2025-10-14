@@ -67,6 +67,7 @@ export interface Thesis {
     id: string;
     title: string;
     description?: string;
+    parent_thesis_id?: string | null;
     created_at?: string;
     updated_at?: string;
 }
