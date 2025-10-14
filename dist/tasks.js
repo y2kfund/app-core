@@ -1,6 +1,6 @@
-import { useQuery as l, useQueryClient as m, useMutation as y } from "@tanstack/vue-query";
+import { useQuery as m, useQueryClient as l, useMutation as y } from "@tanstack/vue-query";
 import { useSupabase as i } from "./index.js";
-import { computed as k, unref as d } from "vue";
+import { computed as w, unref as d } from "vue";
 const a = {
   all: ["tasks"],
   list: (e) => [...a.all, "list", e],
@@ -10,8 +10,8 @@ const a = {
 };
 function b(e) {
   const r = i();
-  return l({
-    queryKey: k(() => {
+  return m({
+    queryKey: w(() => {
       const t = e ? d(e) : {};
       return a.list(t);
     }),
@@ -28,9 +28,9 @@ function b(e) {
     }
   });
 }
-function g(e) {
+function Q(e) {
   const r = i();
-  return l({
+  return m({
     queryKey: a.detail(e),
     queryFn: async () => {
       const { data: t, error: s } = await r.schema("hf").from("tasks").select("*").eq("id", e).single();
@@ -40,9 +40,9 @@ function g(e) {
     enabled: !!e
   });
 }
-function Q(e) {
+function g(e) {
   const r = i();
-  return l({
+  return m({
     queryKey: a.comments(e),
     queryFn: async () => {
       const { data: t, error: s } = await r.schema("hf").from("task_comments").select("*").eq("task_id", e).order("created_at", { ascending: !1 });
@@ -54,7 +54,7 @@ function Q(e) {
 }
 function K(e) {
   const r = i();
-  return l({
+  return m({
     queryKey: a.history(e),
     queryFn: async () => {
       const { data: t, error: s } = await r.schema("hf").from("task_history").select("*").eq("task_id", e).order("changed_at", { ascending: !1 });
@@ -65,7 +65,7 @@ function K(e) {
   });
 }
 function v() {
-  const e = i(), r = m();
+  const e = i(), r = l();
   return y({
     mutationFn: async (t) => {
       const { data: s, error: n } = await e.schema("hf").from("tasks").insert(t).select().single();
@@ -78,7 +78,7 @@ function v() {
   });
 }
 function F() {
-  const e = i(), r = m();
+  const e = i(), r = l();
   return y({
     mutationFn: async ({
       id: t,
@@ -87,17 +87,17 @@ function F() {
     }) => {
       const { data: u, error: c } = await e.schema("hf").from("tasks").select("*").eq("id", t).single();
       if (c) throw c;
-      const { data: q, error: h } = await e.schema("hf").from("tasks").update(s).eq("id", t).select().single();
-      if (h) throw h;
-      const f = Object.keys(s).filter((o) => u[o] !== s[o]).map((o) => ({
+      const { data: q, error: f } = await e.schema("hf").from("tasks").update(s).eq("id", t).select().single();
+      if (f) throw f;
+      const h = Object.keys(s).filter((o) => u[o] !== s[o]).map((o) => ({
         task_id: t,
         field_name: o,
         old_value: String(u[o] || ""),
         new_value: String(s[o] || ""),
         changed_by: n
       }));
-      if (f.length > 0) {
-        const { error: o } = await e.schema("hf").from("task_history").insert(f);
+      if (h.length > 0) {
+        const { error: o } = await e.schema("hf").from("task_history").insert(h);
         o && console.error("Failed to save history:", o);
       }
       return q;
@@ -108,7 +108,7 @@ function F() {
   });
 }
 function T() {
-  const e = i(), r = m();
+  const e = i(), r = l();
   return y({
     mutationFn: async (t) => {
       const { data: s, error: n } = await e.schema("hf").from("task_comments").insert(t).select().single();
@@ -121,7 +121,7 @@ function T() {
   });
 }
 function C() {
-  const e = i(), r = m();
+  const e = i(), r = l();
   return y({
     mutationFn: async (t) => {
       await e.schema("hf").from("task_comments").delete().eq("task_id", t), await e.schema("hf").from("task_history").delete().eq("task_id", t);
@@ -134,14 +134,31 @@ function C() {
     }
   });
 }
+function S() {
+  const e = i();
+  return m({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const { data: r, error: t } = await e.from("users_view").select("id, email, name").order("email");
+      if (t) throw t;
+      return (r || []).map((s) => ({
+        id: s.id,
+        email: s.email,
+        name: s.name || s.email
+      }));
+    },
+    staleTime: 5 * 60 * 1e3
+  });
+}
 export {
   a as taskQueryKeys,
   T as useAddCommentMutation,
   v as useCreateTaskMutation,
   C as useDeleteTaskMutation,
-  Q as useTaskCommentsQuery,
+  g as useTaskCommentsQuery,
   K as useTaskHistoryQuery,
-  g as useTaskQuery,
+  Q as useTaskQuery,
   b as useTasksQuery,
-  F as useUpdateTaskMutation
+  F as useUpdateTaskMutation,
+  S as useUsersQuery
 };

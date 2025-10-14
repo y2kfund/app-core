@@ -294,3 +294,27 @@ export function useDeleteTaskMutation() {
     },
   })
 }
+
+// Fetch all users for assignment dropdown
+export function useUsersQuery() {
+  const supabase = useSupabase()
+  
+  return useQuery({
+    queryKey: ['users'] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users_view')
+        .select('id, email, name')
+        .order('email')
+      
+      if (error) throw error
+      
+      return (data || []).map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.name || user.email
+      }))
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
