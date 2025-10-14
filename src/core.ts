@@ -26,6 +26,7 @@ export const queryKeys = {
   trades: (accountId: string) => ['trades', accountId] as const,
   nlvMargin: (limit: number, userId?: string | null) => ['nlvMargin', limit, userId] as const,
   thesis: () => ['thesis'] as const,
+  thesisConnections: () => ['thesisConnections'] as const,
   userAccountAccess: (userId: string) => ['userAccountAccess', userId] as const,
 }
 
@@ -59,7 +60,7 @@ export interface Position {
   be_price: number | null
   market_price?: number | null
   market_price_fetched_at?: string | null
-  thesis_id?: string | null
+  // Remove thesis_id and thesis - will be added dynamically
   thesis?: {
     id: string
     title: string
@@ -100,6 +101,16 @@ export interface UserAccountAccess {
   notes?: string
   created_at?: string
   updated_at?: string
+}
+
+export interface ThesisConnection {
+  id: string
+  symbol_root: string
+  thesis_id: string
+  created_at?: string
+  updated_at?: string
+  created_by?: string
+  updated_by?: string
 }
 
 // Helper function to fetch accessible account IDs for a user
@@ -143,6 +154,13 @@ export async function fetchUserAccessibleAccounts(
   }
 }
 
+// Helper function to extract symbol root
+export function extractSymbolRoot(symbol: string): string | null {
+  if (!symbol) return null
+  const match = symbol.match(/^([A-Z]+)\b/)
+  return match?.[1] || null
+}
+
 // Thesis query hook
 export function useThesisQuery() {
   const supabase = useSupabase()
@@ -165,6 +183,33 @@ export function useThesisQuery() {
       return data || []
     },
     staleTime: 300_000 // 5 minutes - thesis data doesn't change often
+  })
+
+  return query
+}
+
+// Thesis connections query hook
+export function useThesisConnectionsQuery() {
+  const supabase = useSupabase()
+  const key = queryKeys.thesisConnections()
+
+  const query = useQuery({
+    queryKey: key,
+    queryFn: async (): Promise<ThesisConnection[]> => {
+      const { data, error } = await supabase
+        .schema('hf')
+        .from('positionsAndThesisConnection')
+        .select('*')
+        .order('symbol_root')
+
+      if (error) {
+        console.error('❌ Thesis connections query error:', error)
+        throw error
+      }
+
+      return data || []
+    },
+    staleTime: 300_000 // 5 minutes
   })
 
   return query
@@ -229,8 +274,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
 
       positionsQuery = positionsQuery.order('symbol')
 
-      // Step 4: Fetch positions, accounts, and thesis in parallel
-      const [posRes, acctRes, thesisRes] = await Promise.all([
+      // Step 4: Fetch positions, accounts, thesis, and thesis connections in parallel
+      const [posRes, acctRes, thesisRes, thesisConnectionsRes, marketPriceRes] = await Promise.all([
         positionsQuery,
         supabase
           .schema('hf')
@@ -239,7 +284,14 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         supabase
           .schema('hf')
           .from('thesisMaster')
-          .select('id, title, description')
+          .select('id, title, description'),
+        supabase
+          .schema('hf')
+          .from('positionsAndThesisConnection')
+          .select('*'),
+        supabase
+          .schema('hf')
+          .rpc('get_latest_market_prices')
       ])
 
       if (posRes.error) {
@@ -254,18 +306,14 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         console.error('❌ Thesis query error:', thesisRes.error)
         throw thesisRes.error
       }
+      if (thesisConnectionsRes.error) {
+        console.error('❌ Thesis connections query error:', thesisConnectionsRes.error)
+        throw thesisConnectionsRes.error
+      }
 
-      // Step 5: Fetch the latest market prices using database function
-      // The function returns all rows with the most recent last_fetched_at timestamp
       let marketPriceData: any[] = []
-      
-      const marketPriceRes = await supabase
-        .schema('hf')
-        .rpc('get_latest_market_prices')
-
       if (marketPriceRes.error) {
         console.error('❌ Market price query error:', marketPriceRes.error)
-        // Don't throw - market prices are optional
       } else {
         marketPriceData = marketPriceRes.data || []
         console.log(`📊 Fetched ${marketPriceData.length} latest market prices`)
@@ -276,6 +324,7 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         positionsCount: posRes.data?.length,
         accountsCount: acctRes.data?.length,
         thesisCount: thesisRes.data?.length,
+        thesisConnectionsCount: thesisConnectionsRes.data?.length,
         marketPricesCount: marketPriceData.length,
         filtered: accessibleAccountIds.length > 0,
         accessibleAccounts: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
@@ -289,9 +338,16 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         (thesisRes.data || []).map((t: any) => [t.id, { id: t.id, title: t.title, description: t.description }])
       )
 
+      // Create symbol root -> thesis map
+      const symbolRootThesisMap = new Map<string, any>()
+      ;(thesisConnectionsRes.data || []).forEach((conn: any) => {
+        const thesis = thesisMap.get(conn.thesis_id)
+        if (thesis) {
+          symbolRootThesisMap.set(conn.symbol_root, thesis)
+        }
+      })
+
       // Create market price map by conid
-      // For stocks: use conid directly
-      // For options: use undConid (underlying conid)
       const marketPriceMap = new Map<string, { price: number, fetchedAt: string }>(
         marketPriceData.map((mp: any) => [
           mp.conid as string, 
@@ -301,14 +357,18 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
 
       const positionRows = (posRes.data || []) as any[]
       const enriched: Position[] = positionRows.map((r: any) => {
-        // For stocks and funds, use conid; for options, use undConid (underlying stock conid)
+        // Extract symbol root and find thesis
+        const symbolRoot = extractSymbolRoot(r.symbol)
+        const thesis = symbolRoot ? symbolRootThesisMap.get(symbolRoot) : null
+        
+        // For stocks and funds, use conid; for options, use undConid
         const lookupConid = (r.asset_class === 'STK' || r.asset_class === 'FUND') ? r.conid : r.undConid
         const marketPriceData = marketPriceMap.get(lookupConid)
         
         return {
           ...r,
           legal_entity: accounts.get(r.internal_account_id) || undefined,
-          thesis: r.thesis_id ? thesisMap.get(r.thesis_id) : null,
+          thesis,
           market_price: marketPriceData?.price || null,
           market_price_fetched_at: marketPriceData?.fetchedAt || null,
         }
@@ -319,15 +379,26 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
     staleTime: 60_000
   })
 
-  // Set up Supabase Realtime subscription
-  const channel = supabase
+  // Set up Supabase Realtime subscriptions for positions and thesis connections
+  const positionsChannel = supabase
     .channel(`positions:${accountId}`)
     .on('postgres_changes',
       { 
         schema: 'hf', 
         table: 'positions', 
         event: '*', 
-        // listen to all changes on positions (no account filter)
+      },
+      () => qc.invalidateQueries({ queryKey: key })
+    )
+    .subscribe()
+
+  const connectionsChannel = supabase
+    .channel('thesis-connections')
+    .on('postgres_changes',
+      { 
+        schema: 'hf', 
+        table: 'positionsAndThesisConnection', 
+        event: '*', 
       },
       () => qc.invalidateQueries({ queryKey: key })
     )
@@ -335,7 +406,10 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
 
   return { 
     ...query, 
-    _cleanup: () => channel?.unsubscribe?.()
+    _cleanup: () => {
+      positionsChannel?.unsubscribe?.()
+      connectionsChannel?.unsubscribe?.()
+    }
   }
 }
 

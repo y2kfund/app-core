@@ -1,18 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/vue-query'
 import { useSupabase } from './core'
+import { computed, unref, type ComputedRef, type Ref } from 'vue'
 
+// Task type definition
 export interface Task {
   id: string
   summary: string
-  description: string | null
-  status: string
-  assigned_to: string | null
-  priority: string
+  description?: string
+  status: 'open' | 'in_progress' | 'completed'
+  priority: 'low' | 'medium' | 'high'
+  assigned_to?: string
   created_by: string
   created_at: string
   updated_at: string
 }
 
+// Task Comment type
 export interface TaskComment {
   id: string
   task_id: string
@@ -21,16 +24,18 @@ export interface TaskComment {
   created_at: string
 }
 
+// Task History type
 export interface TaskHistory {
   id: string
   task_id: string
   field_name: string
-  old_value: string | null
-  new_value: string | null
+  old_value: string
+  new_value: string
   changed_by: string
   changed_at: string
 }
 
+// Query keys
 export const taskQueryKeys = {
   all: ['tasks'] as const,
   list: (filters?: { status?: string; search?: string }) => 
@@ -40,25 +45,35 @@ export const taskQueryKeys = {
   history: (taskId: string) => [...taskQueryKeys.all, 'history', taskId] as const,
 }
 
-// Fetch all tasks
-export function useTasksQuery(filters?: { status?: string; search?: string }) {
+// Fetch all tasks with optional filters
+export function useTasksQuery(
+  filters?: ComputedRef<{ status?: string; search?: string }> | Ref<{ status?: string; search?: string }> | { status?: string; search?: string }
+) {
   const supabase = useSupabase()
   
   return useQuery({
-    queryKey: taskQueryKeys.list(filters),
+    queryKey: computed(() => {
+      const filterValue = filters ? unref(filters) : {}
+      return taskQueryKeys.list(filterValue)
+    }),
     queryFn: async () => {
+      const filterValue = filters ? unref(filters) : {}
+      
       let query = supabase
-        .schema('hf')  // ✅ Added schema
+        .schema('hf')
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false })
       
-      if (filters?.status) {
-        query = query.eq('status', filters.status)
+      // Apply status filter
+      if (filterValue?.status) {
+        query = query.eq('status', filterValue.status)
       }
       
-      if (filters?.search) {
-        query = query.or(`summary.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+      // Apply search filter (search in summary and description)
+      if (filterValue?.search && filterValue.search.trim()) {
+        const searchTerm = filterValue.search.trim()
+        query = query.or(`summary.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
       }
       
       const { data, error } = await query
@@ -68,23 +83,24 @@ export function useTasksQuery(filters?: { status?: string; search?: string }) {
   })
 }
 
-// Fetch single task
-export function useTaskQuery(taskId: string) {
+// Fetch single task by ID
+export function useTaskQuery(id: string) {
   const supabase = useSupabase()
   
   return useQuery({
-    queryKey: taskQueryKeys.detail(taskId),
+    queryKey: taskQueryKeys.detail(id),
     queryFn: async () => {
       const { data, error } = await supabase
-        .schema('hf')  // ✅ Added schema
+        .schema('hf')
         .from('tasks')
         .select('*')
-        .eq('id', taskId)
+        .eq('id', id)
         .single()
       
       if (error) throw error
       return data as Task
     },
+    enabled: !!id,
   })
 }
 
@@ -96,15 +112,16 @@ export function useTaskCommentsQuery(taskId: string) {
     queryKey: taskQueryKeys.comments(taskId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .schema('hf')  // ✅ Added schema
+        .schema('hf')
         .from('task_comments')
         .select('*')
         .eq('task_id', taskId)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
       
       if (error) throw error
       return data as TaskComment[]
     },
+    enabled: !!taskId,
   })
 }
 
@@ -116,7 +133,7 @@ export function useTaskHistoryQuery(taskId: string) {
     queryKey: taskQueryKeys.history(taskId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .schema('hf')  // ✅ Added schema
+        .schema('hf')
         .from('task_history')
         .select('*')
         .eq('task_id', taskId)
@@ -125,10 +142,11 @@ export function useTaskHistoryQuery(taskId: string) {
       if (error) throw error
       return data as TaskHistory[]
     },
+    enabled: !!taskId,
   })
 }
 
-// Create task
+// Create task mutation
 export function useCreateTaskMutation() {
   const supabase = useSupabase()
   const queryClient = useQueryClient()
@@ -136,7 +154,7 @@ export function useCreateTaskMutation() {
   return useMutation({
     mutationFn: async (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
-        .schema('hf')  // ✅ Added schema
+        .schema('hf')
         .from('tasks')
         .insert(task)
         .select()
@@ -151,7 +169,7 @@ export function useCreateTaskMutation() {
   })
 }
 
-// Update task
+// Update task mutation - with history tracking
 export function useUpdateTaskMutation() {
   const supabase = useSupabase()
   const queryClient = useQueryClient()
@@ -166,51 +184,76 @@ export function useUpdateTaskMutation() {
       updates: Partial<Task>
       userId: string 
     }) => {
-      // Fetch current task for history
-      const { data: currentTask } = await supabase
-        .schema('hf')  // ✅ Added schema
+      // Get current task to track changes
+      const { data: currentTask, error: fetchError } = await supabase
+        .schema('hf')
         .from('tasks')
         .select('*')
         .eq('id', id)
         .single()
       
-      // Update task
+      if (fetchError) throw fetchError
+
+      // Update the task
       const { data, error } = await supabase
-        .schema('hf')  // ✅ Added schema
+        .schema('hf')
         .from('tasks')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()
       
       if (error) throw error
-      
-      // Record history
-      if (currentTask) {
-        const historyEntries = Object.entries(updates)
-          .filter(([key]) => key !== 'updated_at')
-          .map(([key, newValue]) => ({
-            task_id: id,
-            field_name: key,
-            old_value: String(currentTask[key] || ''),
-            new_value: String(newValue || ''),
-            changed_by: userId,
-          }))
+
+      // Create history entries for changed fields
+      const historyEntries = Object.keys(updates)
+        .filter(key => currentTask[key] !== updates[key as keyof Task])
+        .map(key => ({
+          task_id: id,
+          field_name: key,
+          old_value: String(currentTask[key] || ''),
+          new_value: String(updates[key as keyof Task] || ''),
+          changed_by: userId,
+        }))
+
+      if (historyEntries.length > 0) {
+        const { error: historyError } = await supabase
+          .schema('hf')
+          .from('task_history')
+          .insert(historyEntries)
         
-        if (historyEntries.length > 0) {
-          await supabase
-            .schema('hf')  // ✅ Added schema
-            .from('task_history')
-            .insert(historyEntries)
-        }
+        if (historyError) console.error('Failed to save history:', historyError)
       }
       
       return data as Task
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: taskQueryKeys.all })
-      queryClient.invalidateQueries({ queryKey: taskQueryKeys.detail(variables.id) })
-      queryClient.invalidateQueries({ queryKey: taskQueryKeys.history(variables.id) })
+      queryClient.invalidateQueries({ queryKey: taskQueryKeys.detail(data.id) })
+      queryClient.invalidateQueries({ queryKey: taskQueryKeys.history(data.id) })
+    },
+  })
+}
+
+// Add comment mutation
+export function useAddCommentMutation() {
+  const supabase = useSupabase()
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (comment: Omit<TaskComment, 'id' | 'created_at'>) => {
+      const { data, error } = await supabase
+        .schema('hf')
+        .from('task_comments')
+        .insert(comment)
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data as TaskComment
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: taskQueryKeys.comments(data.task_id) })
     },
   })
 }
@@ -222,38 +265,32 @@ export function useDeleteTaskMutation() {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      // Delete comments first
+      await supabase
+        .schema('hf')
+        .from('task_comments')
+        .delete()
+        .eq('task_id', id)
+
+      // Delete history
+      await supabase
+        .schema('hf')
+        .from('task_history')
+        .delete()
+        .eq('task_id', id)
+
+      // Delete task
       const { error } = await supabase
-        .schema('hf')  // ✅ Added schema
+        .schema('hf')
         .from('tasks')
         .delete()
         .eq('id', id)
+      
       if (error) throw error
+      return id
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskQueryKeys.all })
-    },
-  })
-}
-
-// Add comment
-export function useAddCommentMutation() {
-  const supabase = useSupabase()
-  const queryClient = useQueryClient()
-  
-  return useMutation({
-    mutationFn: async (comment: Omit<TaskComment, 'id' | 'created_at'>) => {
-      const { data, error } = await supabase
-        .schema('hf')  // ✅ Added schema
-        .from('task_comments')
-        .insert(comment)
-        .select()
-        .single()
-      
-      if (error) throw error
-      return data as TaskComment
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: taskQueryKeys.comments(variables.task_id) })
     },
   })
 }

@@ -17,6 +17,7 @@ export declare const queryKeys: {
     trades: (accountId: string) => readonly ["trades", string];
     nlvMargin: (limit: number, userId?: string | null) => readonly ["nlvMargin", number, string | null | undefined];
     thesis: () => readonly ["thesis"];
+    thesisConnections: () => readonly ["thesisConnections"];
     userAccountAccess: (userId: string) => readonly ["userAccountAccess", string];
 };
 export declare function useSupabase(): SupabaseClient;
@@ -42,7 +43,6 @@ export interface Position {
     be_price: number | null;
     market_price?: number | null;
     market_price_fetched_at?: string | null;
-    thesis_id?: string | null;
     thesis?: {
         id: string;
         title: string;
@@ -81,10 +81,21 @@ export interface UserAccountAccess {
     created_at?: string;
     updated_at?: string;
 }
+export interface ThesisConnection {
+    id: string;
+    symbol_root: string;
+    thesis_id: string;
+    created_at?: string;
+    updated_at?: string;
+    created_by?: string;
+    updated_by?: string;
+}
 export declare function fetchUserAccessibleAccounts(supabase: SupabaseClient, userId: string | null | undefined): Promise<string[]>;
+export declare function extractSymbolRoot(symbol: string): string | null;
 export declare function useThesisQuery(): import('@tanstack/vue-query').UseQueryReturnType<Thesis[], Error>;
+export declare function useThesisConnectionsQuery(): import('@tanstack/vue-query').UseQueryReturnType<ThesisConnection[], Error>;
 export declare function usePositionsQuery(accountId: string, userId?: string | null): {
-    _cleanup: () => Promise<"error" | "ok" | "timed out">;
+    _cleanup: () => void;
     data: import('vue').Ref<Position[], Position[]>;
     error: import('vue').Ref<Error, Error>;
     isError: import('vue').Ref<true, true>;
@@ -113,7 +124,7 @@ export declare function usePositionsQuery(accountId: string, userId?: string | n
     promise: import('vue').Ref<Promise<Position[]>, Promise<Position[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<Position[], Error>>;
 } | {
-    _cleanup: () => Promise<"error" | "ok" | "timed out">;
+    _cleanup: () => void;
     data: import('vue').Ref<Position[], Position[]>;
     error: import('vue').Ref<null, null>;
     isError: import('vue').Ref<false, false>;
@@ -142,7 +153,7 @@ export declare function usePositionsQuery(accountId: string, userId?: string | n
     promise: import('vue').Ref<Promise<Position[]>, Promise<Position[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<Position[], Error>>;
 } | {
-    _cleanup: () => Promise<"error" | "ok" | "timed out">;
+    _cleanup: () => void;
     data: import('vue').Ref<undefined, undefined>;
     error: import('vue').Ref<Error, Error>;
     isError: import('vue').Ref<true, true>;
@@ -171,7 +182,7 @@ export declare function usePositionsQuery(accountId: string, userId?: string | n
     promise: import('vue').Ref<Promise<Position[]>, Promise<Position[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<Position[], Error>>;
 } | {
-    _cleanup: () => Promise<"error" | "ok" | "timed out">;
+    _cleanup: () => void;
     data: import('vue').Ref<undefined, undefined>;
     error: import('vue').Ref<null, null>;
     isError: import('vue').Ref<false, false>;
@@ -200,7 +211,7 @@ export declare function usePositionsQuery(accountId: string, userId?: string | n
     promise: import('vue').Ref<Promise<Position[]>, Promise<Position[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<Position[], Error>>;
 } | {
-    _cleanup: () => Promise<"error" | "ok" | "timed out">;
+    _cleanup: () => void;
     data: import('vue').Ref<undefined, undefined>;
     error: import('vue').Ref<null, null>;
     isError: import('vue').Ref<false, false>;
@@ -229,7 +240,7 @@ export declare function usePositionsQuery(accountId: string, userId?: string | n
     promise: import('vue').Ref<Promise<Position[]>, Promise<Position[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<Position[], Error>>;
 } | {
-    _cleanup: () => Promise<"error" | "ok" | "timed out">;
+    _cleanup: () => void;
     data: import('vue').Ref<Position[], Position[]>;
     isError: import('vue').Ref<false, false>;
     error: import('vue').Ref<null, null>;
