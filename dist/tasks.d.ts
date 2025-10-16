@@ -9,6 +9,7 @@ export interface Task {
     created_by: string;
     created_at: string;
     updated_at: string;
+    archived?: boolean;
 }
 export interface TaskComment {
     id: string;
