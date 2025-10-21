@@ -40,6 +40,23 @@ export function useNlvMarginQuery(limit: number, userId?: string | null) {
       
       let result = (data as nlvMargin[]) || []
 
+      // Fetch aliases if userId is present
+      let aliasMap: Map<string, string> = new Map()
+      if (userId) {
+        const { data: aliasData } = await supabase
+          .schema('hf')
+          .from('user_account_alias')
+          .select('internal_account_id, alias')
+          .eq('user_id', userId)
+        aliasMap = new Map((aliasData || []).map((a: any) => [a.internal_account_id, a.alias]))
+      }
+
+      // Merge alias into legal_entity
+      result = result.map(row => ({
+        ...row,
+        legal_entity: aliasMap.get(row.nlv_internal_account_id || '') || row.legal_entity
+      }))
+
       // Step 2: Apply access filter if user has specific account access
       if (accessibleAccountIds.length > 0 && result.length > 0) {
         // Check if the data has nlv_internal_account_id field
