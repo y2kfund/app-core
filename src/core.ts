@@ -276,7 +276,7 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
       positionsQuery = positionsQuery.order('symbol')
 
       // Step 4: Fetch positions, accounts, thesis, and thesis connections in parallel
-      const [posRes, acctRes, thesisRes, thesisConnectionsRes, marketPriceRes] = await Promise.all([
+      const [posRes, acctRes, thesisRes, thesisConnectionsRes, marketPriceRes, aliasRes] = await Promise.all([
         positionsQuery,
         supabase
           .schema('hf')
@@ -292,7 +292,14 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
           .select('*'),
         supabase
           .schema('hf')
-          .rpc('get_latest_market_prices')
+          .rpc('get_latest_market_prices'),
+        userId
+          ? supabase
+              .schema('hf')
+              .from('user_account_alias')
+              .select('internal_account_id, alias')
+              .eq('user_id', userId)
+          : { data: [], error: null }
       ])
 
       if (posRes.error) {
@@ -331,6 +338,11 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         accessibleAccounts: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
+      // Map: internal_account_id -> alias
+      const aliasMap = new Map<string, string>(
+        (aliasRes.data || []).map((r: any) => [r.internal_account_id, r.alias])
+      )
+
       const accounts = new Map<string, string | null | undefined>(
         (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
       )
@@ -366,9 +378,15 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         const lookupConid = (r.asset_class === 'STK' || r.asset_class === 'FUND') ? r.conid : r.undConid
         const marketPriceData = marketPriceMap.get(lookupConid)
         
+        // Use alias if present, else default name
+        let legal_entity = accounts.get(r.internal_account_id) || undefined
+        if (aliasMap.has(r.internal_account_id)) {
+          legal_entity = aliasMap.get(r.internal_account_id)
+        }
+
         return {
           ...r,
-          legal_entity: accounts.get(r.internal_account_id) || undefined,
+          legal_entity,
           thesis,
           market_price: marketPriceData?.price || null,
           market_price_fetched_at: marketPriceData?.fetchedAt || null,
