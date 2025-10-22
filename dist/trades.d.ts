@@ -16,6 +16,7 @@ export interface Trade {
     currency?: string;
     netCash?: string;
     proceeds?: string;
+    fifoPnlRealized?: string;
 }
 export declare function useTradesQuery(accountId: string, userId?: string | null): {
     _cleanup: () => void;

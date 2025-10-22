@@ -21,6 +21,7 @@ export interface Trade {
   currency?: string
   netCash?: string
   proceeds?: string
+  fifoPnlRealized?: string
 }
 
 // Trades query hook
@@ -85,7 +86,8 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
           description,
           currency,
           "netCash",
-          proceeds
+          proceeds,
+          "fifoPnlRealized"
         `)
         .eq('fetched_at', latestFetchedAt)
 
