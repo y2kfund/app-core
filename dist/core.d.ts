@@ -38,9 +38,9 @@ export interface Position {
     raw_json: string;
     fetched_at: string;
     comment: string;
-    cash_flow_on_entry: number;
-    cash_flow_on_exercise: number;
-    be_price: number | null;
+    computed_cash_flow_on_entry: number;
+    computed_cash_flow_on_exercise: number;
+    computed_be_price: number | null;
     market_price?: number | null;
     market_price_fetched_at?: string | null;
     thesis?: {
