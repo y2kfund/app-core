@@ -2,6 +2,7 @@ export interface Trade {
     id: number;
     accountId: string;
     internal_account_id: string;
+    legal_entity?: string;
     symbol: string;
     assetCategory: string;
     quantity: string;
