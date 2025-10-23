@@ -22,6 +22,17 @@ export interface Trade {
   netCash?: string
   proceeds?: string
   fifoPnlRealized?: string
+  openCloseIndicator?: string
+  multiplier?: string
+  mtmPnl?: string
+  closePrice?: string
+  underlyingSymbol?: string
+  putCall?: string
+  strike?: string
+  expiry?: string
+  tradeID?: string
+  conid?: string
+  undConid?: string
 }
 
 // Trades query hook
@@ -87,7 +98,18 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
           currency,
           "netCash",
           proceeds,
-          "fifoPnlRealized"
+          "fifoPnlRealized",
+          "openCloseIndicator",
+          "multiplier",
+          "mtmPnl",
+          "closePrice"
+          underlyingSymbol,
+          "putCall",
+          strike,
+          expiry,
+          "tradeID",
+          conid,
+          "undConid"
         `)
         .eq('fetched_at', latestFetchedAt)
 

@@ -17,6 +17,17 @@ export interface Trade {
     netCash?: string;
     proceeds?: string;
     fifoPnlRealized?: string;
+    openCloseIndicator?: string;
+    multiplier?: string;
+    mtmPnl?: string;
+    closePrice?: string;
+    underlyingSymbol?: string;
+    putCall?: string;
+    strike?: string;
+    expiry?: string;
+    tradeID?: string;
+    conid?: string;
+    undConid?: string;
 }
 export declare function useTradesQuery(accountId: string, userId?: string | null): {
     _cleanup: () => void;

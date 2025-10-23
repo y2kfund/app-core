@@ -1,7 +1,7 @@
-import { useQueryClient as m, useQuery as b } from "@tanstack/vue-query";
-import { useSupabase as p, queryKeys as q, fetchUserAccessibleAccounts as w } from "./index.js";
-function v(l, d) {
-  const r = p(), u = q.trades(l), y = m(), g = b({
+import { useQueryClient as _, useQuery as p } from "@tanstack/vue-query";
+import { useSupabase as b, queryKeys as q, fetchUserAccessibleAccounts as w } from "./index.js";
+function P(l, d) {
+  const r = b(), u = q.trades(l), y = _(), g = p({
     queryKey: u,
     queryFn: async () => {
       var f, h;
@@ -37,7 +37,18 @@ function v(l, d) {
           currency,
           "netCash",
           proceeds,
-          "fifoPnlRealized"
+          "fifoPnlRealized",
+          "openCloseIndicator",
+          "multiplier",
+          "mtmPnl",
+          "closePrice"
+          underlyingSymbol,
+          "putCall",
+          strike,
+          expiry,
+          "tradeID",
+          conid,
+          "undConid"
         `).eq("fetched_at", i);
       e.length > 0 ? (console.log("🔒 Applying access filter for accounts:", e), s = s.in("internal_account_id", e)) : console.log("🔓 No access filter applied - showing all trades"), s = s.order('"tradeDate"', { ascending: !1 });
       const [o, c] = await Promise.all([
@@ -55,12 +66,12 @@ function v(l, d) {
         filtered: e.length > 0,
         accessibleAccounts: e.length > 0 ? e : "all"
       });
-      const _ = new Map(
+      const m = new Map(
         (c.data || []).map((n) => [n.internal_account_id, n.legal_entity])
       );
       return (o.data || []).map((n) => ({
         ...n,
-        legal_entity: _.get(n.internal_account_id) || void 0
+        legal_entity: m.get(n.internal_account_id) || void 0
       }));
     },
     staleTime: 6e4
@@ -82,5 +93,5 @@ function v(l, d) {
   };
 }
 export {
-  v as useTradesQuery
+  P as useTradesQuery
 };
