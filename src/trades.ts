@@ -125,13 +125,20 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
 
       tradesQuery = tradesQuery.order('"tradeDate"', { ascending: false })
 
-      // Step 4: Fetch trades and accounts in parallel
-      const [tradesRes, acctRes] = await Promise.all([
+            // Step 4: Fetch trades and accounts in parallel
+      const [tradesRes, acctRes, aliasRes] = await Promise.all([
         tradesQuery,
         supabase
           .schema('hf')
           .from('user_accounts_master')
-          .select('internal_account_id, legal_entity')
+          .select('internal_account_id, legal_entity'),
+        userId
+          ? supabase
+              .schema('hf')
+              .from('user_account_alias')
+              .select('internal_account_id, alias')
+              .eq('user_id', userId)
+          : { data: [], error: null }
       ])
 
       if (tradesRes.error) {
@@ -156,12 +163,23 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
         (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
       )
 
+      // Map: internal_account_id -> alias
+      const aliasMap = new Map<string, string>(
+        (aliasRes.data || []).map((r: any) => [r.internal_account_id, r.alias])
+      )
+
       // Step 6: Enrich trades with legal_entity
       const tradeRows = (tradesRes.data || []) as any[]
       const enriched: Trade[] = tradeRows.map((r: any) => {
+        // Use alias if present, else default name
+        let legal_entity = accounts.get(r.internal_account_id) || undefined
+        if (aliasMap.has(r.internal_account_id)) {
+          legal_entity = aliasMap.get(r.internal_account_id)
+        }
+
         return {
           ...r,
-          legal_entity: accounts.get(r.internal_account_id) || undefined,
+          legal_entity,
         }
       })
 
