@@ -102,7 +102,7 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
           "openCloseIndicator",
           "multiplier",
           "mtmPnl",
-          "closePrice"
+          "closePrice",
           underlyingSymbol,
           "putCall",
           strike,

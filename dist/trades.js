@@ -41,7 +41,7 @@ function P(l, d) {
           "openCloseIndicator",
           "multiplier",
           "mtmPnl",
-          "closePrice"
+          "closePrice",
           underlyingSymbol,
           "putCall",
           strike,
