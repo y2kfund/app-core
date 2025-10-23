@@ -6,6 +6,9 @@ export interface nlvMargin {
     nlv_internal_account_id?: string;
     legal_entity?: string;
     excess_maintenance_margin?: number;
+    analyst_ratings?: string;
+    founder_led?: boolean;
+    next_earnings?: string;
 }
 export declare function useNlvMarginQuery(limit: number, userId?: string | null): {
     _cleanup: () => void;
