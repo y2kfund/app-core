@@ -27,7 +27,7 @@ export interface Trade {
     expiry?: string;
     tradeID?: string;
     conid?: string;
-    undConid?: string;
+    underlyingConid?: string;
 }
 export declare function useTradesQuery(accountId: string, userId?: string | null): {
     _cleanup: () => void;

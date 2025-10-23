@@ -32,7 +32,7 @@ export interface Trade {
   expiry?: string
   tradeID?: string
   conid?: string
-  undConid?: string
+  underlyingConid?: string
 }
 
 // Trades query hook
@@ -109,7 +109,7 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
           expiry,
           "tradeID",
           conid,
-          "undConid"
+          "underlyingConid"
         `)
         .eq('fetched_at', latestFetchedAt)
 
