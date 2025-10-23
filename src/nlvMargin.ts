@@ -10,9 +10,6 @@ export interface nlvMargin {
   nlv_internal_account_id?: string // Add this field for filtering
   legal_entity?: string // Legal entity name from user_accounts_master
   excess_maintenance_margin?: number // Calculated field
-  analyst_ratings?: string
-  founder_led?: boolean
-  next_earnings?: string 
 }
 
 // nlvMargin join query hook
@@ -58,21 +55,6 @@ export function useNlvMarginQuery(limit: number, userId?: string | null) {
       result = result.map(row => ({
         ...row,
         legal_entity: aliasMap.get(row.nlv_internal_account_id || '') || row.legal_entity
-      }))
-
-      // Fetch notes for all accounts
-      const { data: notesData } = await supabase
-        .schema('hf')
-        .from('maintenance_margin_metadata')
-        .select('internal_account_id, analyst_ratings, founder_led, next_earnings')
-
-      const notesMap = new Map(
-        (notesData || []).map((n: any) => [n.internal_account_id, n])
-      )
-
-      result = result.map(row => ({
-        ...row,
-        ...(notesMap.get(row.nlv_internal_account_id) || {})
       }))
 
       // Step 2: Apply access filter if user has specific account access
