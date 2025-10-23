@@ -48,7 +48,8 @@ function P(l, d) {
           expiry,
           "tradeID",
           conid,
-          "underlyingConid"
+          "underlyingConid",
+          "tradeMoney"
         `).eq("fetched_at", i);
       e.length > 0 ? (console.log("🔒 Applying access filter for accounts:", e), s = s.in("internal_account_id", e)) : console.log("🔓 No access filter applied - showing all trades"), s = s.order('"tradeDate"', { ascending: !1 });
       const [o, c] = await Promise.all([
