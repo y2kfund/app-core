@@ -3,7 +3,7 @@ import { useSupabase, fetchUserAccessibleAccounts, queryKeys } from './core'
 
 // Data types - matching the actual database schema
 export interface Trade {
-  id: number
+  id: string
   accountId: string
   internal_account_id: string
   legal_entity?: string  // Legal entity name from user_accounts_master

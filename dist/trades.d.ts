@@ -1,5 +1,5 @@
 export interface Trade {
-    id: number;
+    id: string;
     accountId: string;
     internal_account_id: string;
     legal_entity?: string;
