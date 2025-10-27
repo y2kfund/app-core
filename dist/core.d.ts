@@ -43,6 +43,8 @@ export interface Position {
     computed_be_price: number | null;
     market_price?: number | null;
     market_price_fetched_at?: string | null;
+    option_market_price?: number | null;
+    underlying_market_price?: number | null;
     thesis?: {
         id: string;
         title: string;

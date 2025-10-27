@@ -60,6 +60,8 @@ export interface Position {
   computed_be_price: number | null
   market_price?: number | null
   market_price_fetched_at?: string | null
+  option_market_price?: number | null  // For options: the option's own market price
+  underlying_market_price?: number | null  // For options: the underlying's market price
   // Remove thesis_id and thesis - will be added dynamically
   thesis?: {
     id: string
@@ -324,7 +326,7 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         console.error('❌ Market price query error:', marketPriceRes.error)
       } else {
         marketPriceData = marketPriceRes.data || []
-        console.log(`📊 Fetched ${marketPriceData.length} latest market prices`)
+        console.log(`📊 Fetched ${marketPriceData.length} market price records`)
       }
 
       console.log('✅ Positions query success:', {
@@ -360,13 +362,14 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         }
       })
 
-      // Create market price map by conid
-      const marketPriceMap = new Map<string, { price: number, fetchedAt: string }>(
-        marketPriceData.map((mp: any) => [
-          mp.conid as string, 
-          { price: mp.market_price, fetchedAt: mp.last_fetched_at }
-        ])
-      )
+      // Create market price map by conid (latest per conid)
+      const marketPriceMap = new Map<string, { price: number, fetchedAt: string }>()
+      for (const mp of marketPriceData) {
+        if (!marketPriceMap.has(mp.conid)) {
+          marketPriceMap.set(mp.conid, { price: mp.market_price, fetchedAt: mp.last_fetched_at })
+        }
+      }
+      console.log(`📊 Processed ${marketPriceMap.size} unique conids with latest prices`)
 
       const positionRows = (posRes.data || []) as any[]
       const enriched: Position[] = positionRows.map((r: any) => {
@@ -374,9 +377,29 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         const symbolRoot = extractSymbolRoot(r.symbol)
         const thesis = symbolRoot ? symbolRootThesisMap.get(symbolRoot) : null
         
-        // For stocks and funds, use conid; for options, use undConid
-        const lookupConid = (r.asset_class === 'STK' || r.asset_class === 'FUND') ? r.conid : r.undConid
-        const marketPriceData = marketPriceMap.get(lookupConid)
+        // Market price logic
+        let market_price: number | null = null
+        let market_price_fetched_at: string | null = null
+        let option_market_price: number | null = null
+        let underlying_market_price: number | null = null
+        
+        if (r.asset_class === 'STK' || r.asset_class === 'FUND') {
+          // For stocks and funds, use conid for market price
+          const priceData = marketPriceMap.get(r.conid)
+          market_price = priceData?.price || null
+          market_price_fetched_at = priceData?.fetchedAt || null
+        } else if (r.asset_class === 'OPT') {
+          // For options, get both option and underlying prices
+          const optionPriceData = marketPriceMap.get(r.conid)
+          const underlyingPriceData = marketPriceMap.get(r.undConid)
+          
+          option_market_price = optionPriceData?.price || null
+          underlying_market_price = underlyingPriceData?.price || null
+          
+          // Set market_price to underlying price for backward compatibility (Ul CM Price)
+          market_price = underlying_market_price
+          market_price_fetched_at = underlyingPriceData?.fetchedAt || null
+        }
         
         // Use alias if present, else default name
         let legal_entity = accounts.get(r.internal_account_id) || undefined
@@ -388,11 +411,13 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
           ...r,
           legal_entity,
           thesis,
-          market_price: marketPriceData?.price || null,
-          market_price_fetched_at: marketPriceData?.fetchedAt || null,
+          market_price,
+          market_price_fetched_at,
+          option_market_price,
+          underlying_market_price,
         }
       })
-
+      console.log('✅ Enriched positions with accounts and thesis', enriched)
       return enriched
     },
     staleTime: 60_000
