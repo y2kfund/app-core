@@ -77,6 +77,22 @@ export declare function useUpdateTaskMutation(): import('@tanstack/vue-query').U
 }, unknown>, "mutate" | "reset">>;
 export declare function useAddCommentMutation(): import('@tanstack/vue-query').UseMutationReturnType<TaskComment, Error, Omit<TaskComment, "id" | "created_at">, unknown, Omit<import('@tanstack/query-core').MutationObserverIdleResult<TaskComment, Error, Omit<TaskComment, "id" | "created_at">, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverLoadingResult<TaskComment, Error, Omit<TaskComment, "id" | "created_at">, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverErrorResult<TaskComment, Error, Omit<TaskComment, "id" | "created_at">, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverSuccessResult<TaskComment, Error, Omit<TaskComment, "id" | "created_at">, unknown>, "mutate" | "reset">>;
 export declare function useDeleteTaskMutation(): import('@tanstack/vue-query').UseMutationReturnType<string, Error, string, unknown, Omit<import('@tanstack/query-core').MutationObserverIdleResult<string, Error, string, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverLoadingResult<string, Error, string, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverErrorResult<string, Error, string, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverSuccessResult<string, Error, string, unknown>, "mutate" | "reset">>;
+export declare function useUpdateCommentMutation(): import('@tanstack/vue-query').UseMutationReturnType<TaskComment, Error, {
+    id: string;
+    comment: string;
+}, unknown, Omit<import('@tanstack/query-core').MutationObserverIdleResult<TaskComment, Error, {
+    id: string;
+    comment: string;
+}, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverLoadingResult<TaskComment, Error, {
+    id: string;
+    comment: string;
+}, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverErrorResult<TaskComment, Error, {
+    id: string;
+    comment: string;
+}, unknown>, "mutate" | "reset"> | Omit<import('@tanstack/query-core').MutationObserverSuccessResult<TaskComment, Error, {
+    id: string;
+    comment: string;
+}, unknown>, "mutate" | "reset">>;
 export declare function useUsersQuery(): import('@tanstack/vue-query').UseQueryReturnType<{
     id: any;
     email: any;

@@ -1,25 +1,25 @@
 import { useQuery as m, useQueryClient as l, useMutation as y } from "@tanstack/vue-query";
-import { useSupabase as i } from "./index.js";
+import { useSupabase as o } from "./index.js";
 import { computed as w, unref as d } from "vue";
-const a = {
+const r = {
   all: ["tasks"],
-  list: (e) => [...a.all, "list", e],
-  detail: (e) => [...a.all, "detail", e],
-  comments: (e) => [...a.all, "comments", e],
-  history: (e) => [...a.all, "history", e]
+  list: (t) => [...r.all, "list", t],
+  detail: (t) => [...r.all, "detail", t],
+  comments: (t) => [...r.all, "comments", t],
+  history: (t) => [...r.all, "history", t]
 };
-function b(e) {
-  const r = i();
+function b(t) {
+  const a = o();
   return m({
     queryKey: w(() => {
-      const t = e ? d(e) : {};
-      return a.list(t);
+      const e = t ? d(t) : {};
+      return r.list(e);
     }),
     queryFn: async () => {
-      const t = e ? d(e) : {};
-      let s = r.schema("hf").from("tasks").select("*").order("created_at", { ascending: !1 });
-      if (t != null && t.status && (s = s.eq("status", t.status)), t != null && t.search && t.search.trim()) {
-        const c = t.search.trim();
+      const e = t ? d(t) : {};
+      let s = a.schema("hf").from("tasks").select("*").order("created_at", { ascending: !1 });
+      if (e != null && e.status && (s = s.eq("status", e.status)), e != null && e.search && e.search.trim()) {
+        const c = e.search.trim();
         s = s.or(`summary.ilike.%${c}%,description.ilike.%${c}%`);
       }
       const { data: n, error: u } = await s;
@@ -28,120 +28,133 @@ function b(e) {
     }
   });
 }
-function Q(e) {
-  const r = i();
+function Q(t) {
+  const a = o();
   return m({
-    queryKey: a.detail(e),
+    queryKey: r.detail(t),
     queryFn: async () => {
-      const { data: t, error: s } = await r.schema("hf").from("tasks").select("*").eq("id", e).single();
+      const { data: e, error: s } = await a.schema("hf").from("tasks").select("*").eq("id", t).single();
       if (s) throw s;
-      return t;
+      return e;
     },
-    enabled: !!e
+    enabled: !!t
   });
 }
-function g(e) {
-  const r = i();
+function g(t) {
+  const a = o();
   return m({
-    queryKey: a.comments(e),
+    queryKey: r.comments(t),
     queryFn: async () => {
-      const { data: t, error: s } = await r.schema("hf").from("task_comments").select("*").eq("task_id", e).order("created_at", { ascending: !1 });
+      const { data: e, error: s } = await a.schema("hf").from("task_comments").select("*").eq("task_id", t).order("created_at", { ascending: !1 });
       if (s) throw s;
-      return t;
+      return e;
     },
-    enabled: !!e
+    enabled: !!t
   });
 }
-function K(e) {
-  const r = i();
+function K(t) {
+  const a = o();
   return m({
-    queryKey: a.history(e),
+    queryKey: r.history(t),
     queryFn: async () => {
-      const { data: t, error: s } = await r.schema("hf").from("task_history").select("*").eq("task_id", e).order("changed_at", { ascending: !1 });
+      const { data: e, error: s } = await a.schema("hf").from("task_history").select("*").eq("task_id", t).order("changed_at", { ascending: !1 });
       if (s) throw s;
-      return t;
+      return e;
     },
-    enabled: !!e
+    enabled: !!t
   });
 }
 function v() {
-  const e = i(), r = l();
+  const t = o(), a = l();
   return y({
-    mutationFn: async (t) => {
-      const { data: s, error: n } = await e.schema("hf").from("tasks").insert(t).select().single();
+    mutationFn: async (e) => {
+      const { data: s, error: n } = await t.schema("hf").from("tasks").insert(e).select().single();
       if (n) throw n;
       return s;
     },
     onSuccess: () => {
-      r.invalidateQueries({ queryKey: a.all });
+      a.invalidateQueries({ queryKey: r.all });
     }
   });
 }
 function F() {
-  const e = i(), r = l();
+  const t = o(), a = l();
   return y({
     mutationFn: async ({
-      id: t,
+      id: e,
       updates: s,
       userId: n
     }) => {
-      const { data: u, error: c } = await e.schema("hf").from("tasks").select("*").eq("id", t).single();
+      const { data: u, error: c } = await t.schema("hf").from("tasks").select("*").eq("id", e).single();
       if (c) throw c;
-      const { data: q, error: f } = await e.schema("hf").from("tasks").update(s).eq("id", t).select().single();
+      const { data: q, error: f } = await t.schema("hf").from("tasks").update(s).eq("id", e).select().single();
       if (f) throw f;
-      const h = Object.keys(s).filter((o) => u[o] !== s[o]).map((o) => ({
-        task_id: t,
-        field_name: o,
-        old_value: String(u[o] || ""),
-        new_value: String(s[o] || ""),
+      const h = Object.keys(s).filter((i) => u[i] !== s[i]).map((i) => ({
+        task_id: e,
+        field_name: i,
+        old_value: String(u[i] || ""),
+        new_value: String(s[i] || ""),
         changed_by: n
       }));
       if (h.length > 0) {
-        const { error: o } = await e.schema("hf").from("task_history").insert(h);
-        o && console.error("Failed to save history:", o);
+        const { error: i } = await t.schema("hf").from("task_history").insert(h);
+        i && console.error("Failed to save history:", i);
       }
       return q;
     },
-    onSuccess: (t) => {
-      r.invalidateQueries({ queryKey: a.all }), r.invalidateQueries({ queryKey: a.detail(t.id) }), r.invalidateQueries({ queryKey: a.history(t.id) });
-    }
-  });
-}
-function T() {
-  const e = i(), r = l();
-  return y({
-    mutationFn: async (t) => {
-      const { data: s, error: n } = await e.schema("hf").from("task_comments").insert(t).select().single();
-      if (n) throw n;
-      return s;
-    },
-    onSuccess: (t) => {
-      r.invalidateQueries({ queryKey: a.comments(t.task_id) });
+    onSuccess: (e) => {
+      a.invalidateQueries({ queryKey: r.all }), a.invalidateQueries({ queryKey: r.detail(e.id) }), a.invalidateQueries({ queryKey: r.history(e.id) });
     }
   });
 }
 function C() {
-  const e = i(), r = l();
+  const t = o(), a = l();
   return y({
-    mutationFn: async (t) => {
-      await e.schema("hf").from("task_comments").delete().eq("task_id", t), await e.schema("hf").from("task_history").delete().eq("task_id", t);
-      const { error: s } = await e.schema("hf").from("tasks").delete().eq("id", t);
+    mutationFn: async (e) => {
+      const { data: s, error: n } = await t.schema("hf").from("task_comments").insert(e).select().single();
+      if (n) throw n;
+      return s;
+    },
+    onSuccess: (e) => {
+      a.invalidateQueries({ queryKey: r.comments(e.task_id) });
+    }
+  });
+}
+function T() {
+  const t = o(), a = l();
+  return y({
+    mutationFn: async (e) => {
+      await t.schema("hf").from("task_comments").delete().eq("task_id", e), await t.schema("hf").from("task_history").delete().eq("task_id", e);
+      const { error: s } = await t.schema("hf").from("tasks").delete().eq("id", e);
       if (s) throw s;
-      return t;
+      return e;
     },
     onSuccess: () => {
-      r.invalidateQueries({ queryKey: a.all });
+      a.invalidateQueries({ queryKey: r.all });
     }
   });
 }
 function S() {
-  const e = i();
+  const t = o(), a = l();
+  return y({
+    mutationFn: async ({ id: e, comment: s }) => {
+      const { data: n, error: u } = await t.schema("hf").from("task_comments").update({ comment: s }).eq("id", e).select().single();
+      if (u) throw u;
+      return n;
+    },
+    onSuccess: (e) => {
+      a.invalidateQueries({ queryKey: r.comments(e.task_id) });
+    }
+  });
+}
+function M() {
+  const t = o();
   return m({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data: r, error: t } = await e.from("users_view").select("id, email, name").order("email");
-      if (t) throw t;
-      return (r || []).map((s) => ({
+      const { data: a, error: e } = await t.from("users_view").select("id, email, name").order("email");
+      if (e) throw e;
+      return (a || []).map((s) => ({
         id: s.id,
         email: s.email,
         name: s.name || s.email
@@ -151,14 +164,15 @@ function S() {
   });
 }
 export {
-  a as taskQueryKeys,
-  T as useAddCommentMutation,
+  r as taskQueryKeys,
+  C as useAddCommentMutation,
   v as useCreateTaskMutation,
-  C as useDeleteTaskMutation,
+  T as useDeleteTaskMutation,
   g as useTaskCommentsQuery,
   K as useTaskHistoryQuery,
   Q as useTaskQuery,
   b as useTasksQuery,
+  S as useUpdateCommentMutation,
   F as useUpdateTaskMutation,
-  S as useUsersQuery
+  M as useUsersQuery
 };

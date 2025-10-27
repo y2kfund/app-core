@@ -296,6 +296,29 @@ export function useDeleteTaskMutation() {
   })
 }
 
+export function useUpdateCommentMutation() {
+  const supabase = useSupabase()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, comment }: { id: string; comment: string }) => {
+      const { data, error } = await supabase
+        .schema('hf')
+        .from('task_comments')
+        .update({ comment })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as TaskComment
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: taskQueryKeys.comments(data.task_id) })
+    },
+  })
+}
+
 // Fetch all users for assignment dropdown
 export function useUsersQuery() {
   const supabase = useSupabase()
