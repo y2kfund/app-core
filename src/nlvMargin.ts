@@ -10,6 +10,7 @@ export interface nlvMargin {
   nlv_internal_account_id?: string // Add this field for filtering
   legal_entity?: string // Legal entity name from user_accounts_master
   excess_maintenance_margin?: number // Calculated field
+  archived?: boolean
 }
 
 // nlvMargin join query hook
