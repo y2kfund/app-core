@@ -68,6 +68,7 @@ export interface Position {
     title: string
     description?: string
   } | null
+  maintenance_margin_change?: string | null
 }
 
 export interface Trade {
