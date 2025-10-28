@@ -32,7 +32,7 @@ export function useNlvMarginQuery(limit: number, userId?: string | null) {
 
       const { data, error } = await supabase
       .schema('hf')
-      .rpc('get_nlv_margin_with_excess', {
+      .rpc('get_nlv_margin_with_excess_and_sync_type', {
         p_limit: limit
       })
 

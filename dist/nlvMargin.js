@@ -1,7 +1,7 @@
 import { useQueryClient as d, useQuery as p } from "@tanstack/vue-query";
 import { useSupabase as h, queryKeys as b, fetchUserAccessibleAccounts as v } from "./index.js";
 function M(r, i) {
-  const s = h(), o = b.nlvMargin(r, i), u = d(), y = p({
+  const s = h(), o = b.nlvMargin(r, i), u = d(), f = p({
     queryKey: o,
     queryFn: async () => {
       const n = await v(s, i);
@@ -10,14 +10,14 @@ function M(r, i) {
         userId: i || "none",
         accessibleAccountIds: n.length > 0 ? n : "all"
       });
-      const { data: t, error: _ } = await s.schema("hf").rpc("get_nlv_margin_with_excess", {
+      const { data: t, error: _ } = await s.schema("hf").rpc("get_nlv_margin_with_excess_and_sync_type", {
         p_limit: r
       });
       if (_) throw _;
       let e = t || [], g = /* @__PURE__ */ new Map();
       if (i) {
         const { data: a } = await s.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", i);
-        g = new Map((a || []).map((f) => [f.internal_account_id, f.alias]));
+        g = new Map((a || []).map((y) => [y.internal_account_id, y.alias]));
       }
       return e = e.map((a) => ({
         ...a,
@@ -49,7 +49,7 @@ function M(r, i) {
     () => u.invalidateQueries({ queryKey: o })
   ).subscribe();
   return {
-    ...y,
+    ...f,
     _cleanup: () => {
       var n, t;
       (n = c == null ? void 0 : c.unsubscribe) == null || n.call(c), (t = l == null ? void 0 : l.unsubscribe) == null || t.call(l);
