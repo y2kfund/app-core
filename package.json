@@ -18,6 +18,10 @@
     "./tasks": {
       "types": "./dist/tasks.d.ts",
       "import": "./dist/tasks.js"
+    },
+    "./cashTransactions": {
+      "types": "./dist/cashTransactions.d.ts",
+      "import": "./dist/cashTransactions.js"
     }
   },
   "main": "./dist/index.js",
