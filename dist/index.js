@@ -4,6 +4,7 @@ import { createClient as G } from "@supabase/supabase-js";
 const $ = Symbol.for("y2kfund.supabase"), A = {
   positions: (e, o) => ["positions", e, o],
   trades: (e) => ["trades", e],
+  cashTransactions: (e) => ["cashTransactions", e],
   nlvMargin: (e, o) => ["nlvMargin", e, o],
   thesis: () => ["thesis"],
   thesisConnections: () => ["thesisConnections"],

@@ -24,6 +24,7 @@ export interface CoreOptions {
 export const queryKeys = {
   positions: (accountId: string, userId?: string | null) => ['positions', accountId, userId] as const,
   trades: (accountId: string) => ['trades', accountId] as const,
+  cashTransactions: (accountId: string) => ['cashTransactions', accountId] as const,
   nlvMargin: (limit: number, userId?: string | null) => ['nlvMargin', limit, userId] as const,
   thesis: () => ['thesis'] as const,
   thesisConnections: () => ['thesisConnections'] as const,
