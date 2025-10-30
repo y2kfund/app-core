@@ -1,150 +1,159 @@
-import { inject as L } from "vue";
-import { useQuery as q, useQueryClient as U, QueryClient as V, VueQueryPlugin as Z } from "@tanstack/vue-query";
-import { createClient as G } from "@supabase/supabase-js";
-const $ = Symbol.for("y2kfund.supabase"), A = {
-  positions: (e, o) => ["positions", e, o],
-  trades: (e) => ["trades", e],
-  cashTransactions: (e) => ["cashTransactions", e],
-  nlvMargin: (e, o) => ["nlvMargin", e, o],
+import { inject as J } from "vue";
+import { useQuery as T, useQueryClient as W, QueryClient as L, VueQueryPlugin as X } from "@tanstack/vue-query";
+import { createClient as Y } from "@supabase/supabase-js";
+const j = Symbol.for("y2kfund.supabase"), k = {
+  positions: (t, o) => ["positions", t, o],
+  trades: (t) => ["trades", t],
+  cashTransactions: (t) => ["cashTransactions", t],
+  nlvMargin: (t, o) => ["nlvMargin", t, o],
   thesis: () => ["thesis"],
   thesisConnections: () => ["thesisConnections"],
-  userAccountAccess: (e) => ["userAccountAccess", e]
+  userAccountAccess: (t) => ["userAccountAccess", t]
 };
-function T() {
-  const e = L($, null);
-  if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
-  return e;
+function M() {
+  const t = J(j, null);
+  if (!t) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
+  return t;
 }
-async function H(e, o) {
+async function D(t, o) {
   if (!o)
     return console.log("⚠️ No userId provided, showing all positions"), [];
   try {
     console.log("👤 Fetching accessible accounts for user:", o);
-    const { data: r, error: n } = await e.schema("hf").from("user_account_access").select("internal_account_id").eq("user_id", o).eq("is_active", !0);
-    if (n)
-      return console.error("❌ Error fetching user account access:", n), [];
-    if (!r || r.length === 0)
+    const { data: n, error: r } = await t.schema("hf").from("user_account_access").select("internal_account_id").eq("user_id", o).eq("is_active", !0);
+    if (r)
+      return console.error("❌ Error fetching user account access:", r), [];
+    if (!n || n.length === 0)
       return console.log("⚠️ No account access found for user, showing all positions"), [];
-    const t = r.map((a) => a.internal_account_id);
-    return console.log("✅ User has access to accounts:", t), t;
-  } catch (r) {
-    return console.error("❌ Exception fetching account access:", r), [];
+    const s = n.map((i) => i.internal_account_id);
+    return console.log("✅ User has access to accounts:", s), s;
+  } catch (n) {
+    return console.error("❌ Exception fetching account access:", n), [];
   }
 }
-function J(e) {
-  if (!e) return null;
-  const o = e.match(/^([A-Z]+)\b/);
+function I(t) {
+  if (!t) return null;
+  const o = t.match(/^([A-Z]+)\b/);
   return (o == null ? void 0 : o[1]) || null;
 }
-function ee() {
-  const e = T(), o = A.thesis();
-  return q({
+function oe() {
+  const t = M(), o = k.thesis();
+  return T({
     queryKey: o,
     queryFn: async () => {
-      const { data: n, error: t } = await e.schema("hf").from("thesisMaster").select("*").order("title");
-      if (t)
-        throw console.error("❌ Thesis query error:", t), t;
-      return n || [];
+      const { data: r, error: s } = await t.schema("hf").from("thesisMaster").select("*").order("title");
+      if (s)
+        throw console.error("❌ Thesis query error:", s), s;
+      return r || [];
     },
     staleTime: 3e5
     // 5 minutes - thesis data doesn't change often
   });
 }
-function se() {
-  const e = T(), o = A.thesisConnections();
-  return q({
+function ne() {
+  const t = M(), o = k.thesisConnections();
+  return T({
     queryKey: o,
     queryFn: async () => {
-      const { data: n, error: t } = await e.schema("hf").from("positionsAndThesisConnection").select("*").order("symbol_root");
-      if (t)
-        throw console.error("❌ Thesis connections query error:", t), t;
-      return n || [];
+      const { data: r, error: s } = await t.schema("hf").from("positionsAndThesisConnection").select("*").order("symbol_root");
+      if (s)
+        throw console.error("❌ Thesis connections query error:", s), s;
+      return r || [];
     },
     staleTime: 3e5
     // 5 minutes
   });
 }
-function te(e, o) {
-  const r = T(), n = A.positions(e, o), t = U(), a = q({
-    queryKey: n,
+function re(t, o) {
+  const n = M(), r = k.positions(t, o), s = W(), i = T({
+    queryKey: r,
     queryFn: async () => {
-      var P, S, E, O;
-      const c = await H(r, o);
+      var S, O, U, $;
+      const a = await D(n, o);
+      let f = a;
+      if (f.length === 0) {
+        const { data: e, error: l } = await n.schema("hf").from("positions").select("internal_account_id").neq("internal_account_id", null).then((A) => {
+          var _;
+          return { data: ((_ = A.data) == null ? void 0 : _.map((b) => b.internal_account_id)) ?? [], error: A.error };
+        });
+        if (l)
+          return console.error("❌ Error fetching all account IDs:", l), [];
+        f = Array.from(new Set(e));
+      }
+      const { data: z, error: C } = await n.schema("hf").from("positions").select("internal_account_id, fetched_at").in("internal_account_id", f).order("fetched_at", { ascending: !1 });
+      if (C)
+        throw console.error("❌ Error fetching latest fetched_at per account:", C), C;
+      const R = /* @__PURE__ */ new Map();
+      for (const e of z || [])
+        R.has(e.internal_account_id) || R.set(e.internal_account_id, e.fetched_at);
+      const B = Array.from(R.entries()).map(
+        ([e, l]) => n.schema("hf").from("positions").select("*").eq("internal_account_id", e).eq("fetched_at", l)
+      ), F = await Promise.all(B), V = F.flatMap((e) => e.data || []);
       console.log("🔍 Querying positions with config:", {
-        accountId: e,
+        accountId: t,
         schema: "hf",
         table: "positions",
         userId: o || "none",
-        accessibleAccountIds: c.length > 0 ? c : "all"
+        accessibleAccountIds: a.length > 0 ? a : "all"
       });
-      const h = await r.schema("hf").from("positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1);
-      if (h.error)
-        throw console.error("❌ Max fetched_at query error:", h.error), h.error;
-      if (!h.data || h.data.length === 0)
-        return console.log("⚠️ No positions found in database"), [];
-      const k = h.data[0].fetched_at;
-      console.log("📅 Latest fetched_at:", k);
-      let p = r.schema("hf").from("positions").select("*").eq("fetched_at", k);
-      c.length > 0 ? (console.log("🔒 Applying access filter for accounts:", c), p = p.in("internal_account_id", c)) : console.log("🔓 No access filter applied - showing all positions"), p = p.order("symbol");
-      const [m, _, y, g, C, W] = await Promise.all([
-        p,
-        r.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        r.schema("hf").from("thesisMaster").select("id, title, description"),
-        r.schema("hf").from("positionsAndThesisConnection").select("*"),
-        r.schema("hf").rpc("get_latest_market_prices"),
-        o ? r.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", o) : { data: [], error: null }
+      const [w, m, y, g, v, Z] = await Promise.all([
+        F[0],
+        n.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
+        n.schema("hf").from("thesisMaster").select("id, title, description"),
+        n.schema("hf").from("positionsAndThesisConnection").select("*"),
+        n.schema("hf").rpc("get_latest_market_prices"),
+        o ? n.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", o) : { data: [], error: null }
       ]);
+      if (w.error)
+        throw console.error("❌ Positions query error:", w.error), w.error;
       if (m.error)
-        throw console.error("❌ Positions query error:", m.error), m.error;
-      if (_.error)
-        throw console.error("❌ Accounts query error:", _.error), _.error;
+        throw console.error("❌ Accounts query error:", m.error), m.error;
       if (y.error)
         throw console.error("❌ Thesis query error:", y.error), y.error;
       if (g.error)
         throw console.error("❌ Thesis connections query error:", g.error), g.error;
-      let w = [];
-      C.error ? console.error("❌ Market price query error:", C.error) : (w = C.data || [], console.log(`📊 Fetched ${w.length} market price records`)), console.log("✅ Positions query success:", {
-        latestFetchedAt: k,
-        positionsCount: (P = m.data) == null ? void 0 : P.length,
-        accountsCount: (S = _.data) == null ? void 0 : S.length,
-        thesisCount: (E = y.data) == null ? void 0 : E.length,
-        thesisConnectionsCount: (O = g.data) == null ? void 0 : O.length,
-        marketPricesCount: w.length,
-        filtered: c.length > 0,
-        accessibleAccounts: c.length > 0 ? c : "all"
+      let q = [];
+      v.error ? console.error("❌ Market price query error:", v.error) : (q = v.data || [], console.log(`📊 Fetched ${q.length} market price records`)), console.log("✅ Positions query success:", {
+        positionsCount: (S = w.data) == null ? void 0 : S.length,
+        accountsCount: (O = m.data) == null ? void 0 : O.length,
+        thesisCount: (U = y.data) == null ? void 0 : U.length,
+        thesisConnectionsCount: ($ = g.data) == null ? void 0 : $.length,
+        marketPricesCount: q.length,
+        filtered: a.length > 0,
+        accessibleAccounts: a.length > 0 ? a : "all"
       });
-      const v = new Map(
-        (W.data || []).map((s) => [s.internal_account_id, s.alias])
-      ), j = new Map(
-        (_.data || []).map((s) => [s.internal_account_id, s.legal_entity])
-      ), z = new Map(
-        (y.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
-      ), F = /* @__PURE__ */ new Map();
-      (g.data || []).forEach((s) => {
-        const b = z.get(s.thesis_id);
-        b && F.set(s.symbol_root, b);
+      const E = new Map(
+        (Z.data || []).map((e) => [e.internal_account_id, e.alias])
+      ), G = new Map(
+        (m.data || []).map((e) => [e.internal_account_id, e.legal_entity])
+      ), H = new Map(
+        (y.data || []).map((e) => [e.id, { id: e.id, title: e.title, description: e.description }])
+      ), P = /* @__PURE__ */ new Map();
+      (g.data || []).forEach((e) => {
+        const l = H.get(e.thesis_id);
+        l && P.set(e.symbol_root, l);
       });
       const d = /* @__PURE__ */ new Map();
-      for (const s of w)
-        d.has(s.conid) || d.set(s.conid, { price: s.market_price, fetchedAt: s.last_fetched_at });
+      for (const e of q)
+        d.has(e.conid) || d.set(e.conid, { price: e.market_price, fetchedAt: e.last_fetched_at });
       console.log(`📊 Processed ${d.size} unique conids with latest prices`);
-      const K = (m.data || []).map((s) => {
-        const b = J(s.symbol), B = b ? F.get(b) : null;
-        let M = null, R = null, x = null, Q = null;
-        if (s.asset_class === "STK" || s.asset_class === "FUND") {
-          const l = d.get(s.conid);
-          M = (l == null ? void 0 : l.price) || null, R = (l == null ? void 0 : l.fetchedAt) || null;
-        } else if (s.asset_class === "OPT") {
-          const l = d.get(s.conid), f = d.get(s.undConid);
-          x = (l == null ? void 0 : l.price) || null, Q = (f == null ? void 0 : f.price) || null, M = Q, R = (f == null ? void 0 : f.fetchedAt) || null;
+      const K = V.map((e) => {
+        const l = I(e.symbol), A = l ? P.get(l) : null;
+        let _ = null, b = null, x = null, Q = null;
+        if (e.asset_class === "STK" || e.asset_class === "FUND") {
+          const u = d.get(e.conid);
+          _ = (u == null ? void 0 : u.price) || null, b = (u == null ? void 0 : u.fetchedAt) || null;
+        } else if (e.asset_class === "OPT") {
+          const u = d.get(e.conid), p = d.get(e.undConid);
+          x = (u == null ? void 0 : u.price) || null, Q = (p == null ? void 0 : p.price) || null, _ = Q, b = (p == null ? void 0 : p.fetchedAt) || null;
         }
-        let N = j.get(s.internal_account_id) || void 0;
-        return v.has(s.internal_account_id) && (N = v.get(s.internal_account_id)), {
-          ...s,
+        let N = G.get(e.internal_account_id) || void 0;
+        return E.has(e.internal_account_id) && (N = E.get(e.internal_account_id)), {
+          ...e,
           legal_entity: N,
-          thesis: B,
-          market_price: M,
-          market_price_fetched_at: R,
+          thesis: A,
+          market_price: _,
+          market_price_fetched_at: b,
           option_market_price: x,
           underlying_market_price: Q
         };
@@ -152,89 +161,89 @@ function te(e, o) {
       return console.log("✅ Enriched positions with accounts and thesis", K), K;
     },
     staleTime: 6e4
-  }), i = r.channel(`positions:${e}`).on(
+  }), c = n.channel(`positions:${t}`).on(
     "postgres_changes",
     {
       schema: "hf",
       table: "positions",
       event: "*"
     },
-    () => t.invalidateQueries({ queryKey: n })
-  ).subscribe(), u = r.channel("thesis-connections").on(
+    () => s.invalidateQueries({ queryKey: r })
+  ).subscribe(), h = n.channel("thesis-connections").on(
     "postgres_changes",
     {
       schema: "hf",
       table: "positionsAndThesisConnection",
       event: "*"
     },
-    () => t.invalidateQueries({ queryKey: n })
+    () => s.invalidateQueries({ queryKey: r })
   ).subscribe();
   return {
-    ...a,
+    ...i,
     _cleanup: () => {
-      var c, h;
-      (c = i == null ? void 0 : i.unsubscribe) == null || c.call(i), (h = u == null ? void 0 : u.unsubscribe) == null || h.call(u);
+      var a, f;
+      (a = c == null ? void 0 : c.unsubscribe) == null || a.call(c), (f = h == null ? void 0 : h.unsubscribe) == null || f.call(h);
     }
   };
 }
-function oe(e) {
-  const o = T(), r = A.trades(e), n = U(), t = q({
-    queryKey: r,
+function ce(t) {
+  const o = M(), n = k.trades(t), r = W(), s = T({
+    queryKey: n,
     queryFn: async () => {
-      const { data: i, error: u } = await o.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
-      if (u) throw u;
-      return i || [];
+      const { data: c, error: h } = await o.schema("hf").from("trades").select("*").eq("account_id", t).order("trade_date", { ascending: !1 });
+      if (h) throw h;
+      return c || [];
     },
     staleTime: 6e4
-  }), a = o.channel(`trades:${e}`).on(
+  }), i = o.channel(`trades:${t}`).on(
     "postgres_changes",
     {
       schema: "hf",
       table: "trades",
       event: "*",
-      filter: `account_id=eq.${e}`
+      filter: `account_id=eq.${t}`
     },
-    () => n.invalidateQueries({ queryKey: r })
+    () => r.invalidateQueries({ queryKey: n })
   ).subscribe();
   return {
-    ...t,
+    ...s,
     _cleanup: () => {
-      var i;
-      return (i = a == null ? void 0 : a.unsubscribe) == null ? void 0 : i.call(a);
+      var c;
+      return (c = i == null ? void 0 : i.unsubscribe) == null ? void 0 : c.call(i);
     }
   };
 }
-async function re(e) {
+async function ae(t) {
   const {
     supabaseUrl: o,
-    supabaseAnon: r,
-    supabaseClient: n,
-    query: t
-  } = e, a = n ?? G(o, r), i = new V({
+    supabaseAnon: n,
+    supabaseClient: r,
+    query: s
+  } = t, i = r ?? Y(o, n), c = new L({
     defaultOptions: {
       queries: {
-        staleTime: (t == null ? void 0 : t.staleTime) ?? 6e4,
-        gcTime: (t == null ? void 0 : t.gcTime) ?? 864e5,
-        refetchOnWindowFocus: (t == null ? void 0 : t.refetchOnWindowFocus) ?? !1,
-        refetchOnReconnect: (t == null ? void 0 : t.refetchOnReconnect) ?? !0
+        staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
+        gcTime: (s == null ? void 0 : s.gcTime) ?? 864e5,
+        refetchOnWindowFocus: (s == null ? void 0 : s.refetchOnWindowFocus) ?? !1,
+        refetchOnReconnect: (s == null ? void 0 : s.refetchOnReconnect) ?? !0
       }
     }
   });
   return {
-    install(c) {
-      c.provide($, a), c.use(Z, { queryClient: i });
+    install(a) {
+      a.provide(j, i), a.use(X, { queryClient: c });
     }
   };
 }
 export {
-  $ as SUPABASE,
-  re as createCore,
-  J as extractSymbolRoot,
-  H as fetchUserAccessibleAccounts,
-  A as queryKeys,
-  te as usePositionsQuery,
-  T as useSupabase,
-  se as useThesisConnectionsQuery,
-  ee as useThesisQuery,
-  oe as useTradesQuery
+  j as SUPABASE,
+  ae as createCore,
+  I as extractSymbolRoot,
+  D as fetchUserAccessibleAccounts,
+  k as queryKeys,
+  re as usePositionsQuery,
+  M as useSupabase,
+  ne as useThesisConnectionsQuery,
+  oe as useThesisQuery,
+  ce as useTradesQuery
 };

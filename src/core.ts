@@ -232,6 +232,56 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
       // Step 1: Fetch accessible accounts for the user
       const accessibleAccountIds = await fetchUserAccessibleAccounts(supabase, userId)
 
+      // If no access filter, fetch all unique account IDs from positions table
+      let accountIds: string[] = accessibleAccountIds
+      if (accountIds.length === 0) {
+        const { data: allAccounts, error: allAccountsError } = await supabase
+          .schema('hf')
+          .from('positions')
+          .select('internal_account_id')
+          .neq('internal_account_id', null)
+          .then((res) => ({ data: res.data?.map((r: any) => r.internal_account_id) ?? [], error: res.error }))
+        if (allAccountsError) {
+          console.error('❌ Error fetching all account IDs:', allAccountsError)
+          return []
+        }
+        accountIds = Array.from(new Set(allAccounts))
+      }
+
+      // Step 2: For each account, get its latest fetched_at
+      const { data: latestFetchedAts, error: fetchedAtError } = await supabase
+        .schema('hf')
+        .from('positions')
+        .select('internal_account_id, fetched_at')
+        .in('internal_account_id', accountIds)
+        .order('fetched_at', { ascending: false })
+
+      if (fetchedAtError) {
+        console.error('❌ Error fetching latest fetched_at per account:', fetchedAtError)
+        throw fetchedAtError
+      }
+
+      // Map: accountId -> latest fetched_at
+      const latestFetchedAtMap = new Map<string, string>()
+      for (const row of latestFetchedAts || []) {
+        if (!latestFetchedAtMap.has(row.internal_account_id)) {
+          latestFetchedAtMap.set(row.internal_account_id, row.fetched_at)
+        }
+      }
+
+      // Step 3: Fetch positions for each account at its latest fetched_at
+      const positionsPromises = Array.from(latestFetchedAtMap.entries()).map(
+        ([accountId, fetchedAt]) =>
+          supabase
+            .schema('hf')
+            .from('positions')
+            .select('*')
+            .eq('internal_account_id', accountId)
+            .eq('fetched_at', fetchedAt)
+      )
+      const positionsResults = await Promise.all(positionsPromises)
+      const positionRows = positionsResults.flatMap(res => res.data || [])
+
       console.log('🔍 Querying positions with config:', {
         accountId,
         schema: 'hf',
@@ -240,48 +290,9 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
-      // Step 2: Get the latest fetched_at timestamp
-      const maxFetchedAtRes = await supabase
-        .schema('hf')
-        .from('positions')
-        .select('fetched_at')
-        .order('fetched_at', { ascending: false })
-        .limit(1)
-
-      if (maxFetchedAtRes.error) {
-        console.error('❌ Max fetched_at query error:', maxFetchedAtRes.error)
-        throw maxFetchedAtRes.error
-      }
-
-      if (!maxFetchedAtRes.data || maxFetchedAtRes.data.length === 0) {
-        console.log('⚠️ No positions found in database')
-        return []
-      }
-
-      const latestFetchedAt = maxFetchedAtRes.data[0].fetched_at
-
-      console.log('📅 Latest fetched_at:', latestFetchedAt)
-
-      // Step 3: Build positions query with optional access filter
-      let positionsQuery = supabase
-        .schema('hf')
-        .from('positions')
-        .select('*')
-        .eq('fetched_at', latestFetchedAt)
-
-      // Apply access filter if user has specific account access
-      if (accessibleAccountIds.length > 0) {
-        console.log('🔒 Applying access filter for accounts:', accessibleAccountIds)
-        positionsQuery = positionsQuery.in('internal_account_id', accessibleAccountIds)
-      } else {
-        console.log('🔓 No access filter applied - showing all positions')
-      }
-
-      positionsQuery = positionsQuery.order('symbol')
-
       // Step 4: Fetch positions, accounts, thesis, and thesis connections in parallel
       const [posRes, acctRes, thesisRes, thesisConnectionsRes, marketPriceRes, aliasRes] = await Promise.all([
-        positionsQuery,
+        positionsResults[0],
         supabase
           .schema('hf')
           .from('user_accounts_master')
@@ -332,7 +343,6 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
       }
 
       console.log('✅ Positions query success:', {
-        latestFetchedAt,
         positionsCount: posRes.data?.length,
         accountsCount: acctRes.data?.length,
         thesisCount: thesisRes.data?.length,
@@ -373,7 +383,6 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
       }
       console.log(`📊 Processed ${marketPriceMap.size} unique conids with latest prices`)
 
-      const positionRows = (posRes.data || []) as any[]
       const enriched: Position[] = positionRows.map((r: any) => {
         // Extract symbol root and find thesis
         const symbolRoot = extractSymbolRoot(r.symbol)
