@@ -221,16 +221,26 @@ export function useThesisConnectionsQuery() {
 }
 
 // Positions query hook
-export function usePositionsQuery(accountId: string, userId?: string | null) {
+export function usePositionsQuery(accountId: string, userId?: string | null, asOfDate?: string | null) {
   const supabase = useSupabase()
-  const key = queryKeys.positions(accountId, userId)
   const qc = useQueryClient()
+
+  // Use computed value for queryKey
+  const getAsOf = () =>
+    asOfDate && typeof asOfDate === 'object' && 'value' in asOfDate
+      ? asOfDate.value
+      : asOfDate
+  const key = [...queryKeys.positions(accountId, userId), getAsOf()]
 
   const query = useQuery({
     queryKey: key,
     queryFn: async (): Promise<Position[]> => {
+      const asOf = getAsOf()
+
       // Step 1: Fetch accessible accounts for the user
       const accessibleAccountIds = await fetchUserAccessibleAccounts(supabase, userId)
+
+      console.log('🔍 Querying positions with asOf:', asOf)
 
       // If no access filter, fetch all unique account IDs from positions table
       let accountIds: string[] = accessibleAccountIds
@@ -248,22 +258,39 @@ export function usePositionsQuery(accountId: string, userId?: string | null) {
         accountIds = Array.from(new Set(allAccounts))
       }
 
-      // Step 2: For each account, get its latest fetched_at
-      const { data: latestFetchedAts, error: fetchedAtError } = await supabase
-        .schema('hf')
-        .from('positions')
-        .select('internal_account_id, fetched_at')
-        .in('internal_account_id', accountIds)
-        .order('fetched_at', { ascending: false })
-
-      if (fetchedAtError) {
-        console.error('❌ Error fetching latest fetched_at per account:', fetchedAtError)
-        throw fetchedAtError
+      // Step 2: For each account, get its latest fetched_at (or as of date)
+      let fetchedAtRows
+      if (asOf) {
+        // Get the latest fetched_at <= asOfDate for each account
+        const { data, error } = await supabase
+          .schema('hf')
+          .rpc('get_latest_fetched_at_per_account', {
+            account_ids: accountIds,
+            as_of_date: asOf
+          })
+        if (error) {
+          console.error('❌ Error fetching as-of fetched_at:', error)
+          throw error
+        }
+        fetchedAtRows = data || []
+      } else {
+        // For latest fetched_at
+        const { data, error } = await supabase
+          .schema('hf')
+          .from('positions')
+          .select('internal_account_id, fetched_at')
+          .in('internal_account_id', accountIds)
+          .order('fetched_at', { ascending: false })
+        if (error) {
+          console.error('❌ Error fetching latest fetched_at per account:', error)
+          throw error
+        }
+        fetchedAtRows = data || []
       }
 
-      // Map: accountId -> latest fetched_at
+      // Map: accountId -> fetched_at
       const latestFetchedAtMap = new Map<string, string>()
-      for (const row of latestFetchedAts || []) {
+      for (const row of fetchedAtRows) {
         if (!latestFetchedAtMap.has(row.internal_account_id)) {
           latestFetchedAtMap.set(row.internal_account_id, row.fetched_at)
         }

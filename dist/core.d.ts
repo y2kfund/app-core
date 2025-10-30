@@ -99,7 +99,7 @@ export declare function fetchUserAccessibleAccounts(supabase: SupabaseClient, us
 export declare function extractSymbolRoot(symbol: string): string | null;
 export declare function useThesisQuery(): import('@tanstack/vue-query').UseQueryReturnType<Thesis[], Error>;
 export declare function useThesisConnectionsQuery(): import('@tanstack/vue-query').UseQueryReturnType<ThesisConnection[], Error>;
-export declare function usePositionsQuery(accountId: string, userId?: string | null): {
+export declare function usePositionsQuery(accountId: string, userId?: string | null, asOfDate?: string | null): {
     _cleanup: () => void;
     data: import('vue').Ref<Position[], Position[]>;
     error: import('vue').Ref<Error, Error>;
