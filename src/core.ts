@@ -118,6 +118,14 @@ export interface ThesisConnection {
   updated_by?: string
 }
 
+export interface SymbolComment {
+  id: number
+  symbol_root: string
+  user_id: string
+  comment: string
+  updated_at: string
+}
+
 // Helper function to fetch accessible account IDs for a user
 export async function fetchUserAccessibleAccounts(
   supabase: SupabaseClient,
@@ -218,6 +226,38 @@ export function useThesisConnectionsQuery() {
   })
 
   return query
+}
+
+// Fetch comments for all symbol roots for a user
+export function useSymbolCommentsQuery(userId: string) {
+  const supabase = useSupabase()
+  return useQuery({
+    queryKey: ['symbolComments', userId],
+    queryFn: async (): Promise<SymbolComment[]> => {
+      const { data, error } = await supabase
+        .schema('hf')
+        .from('positions_symbol_comments')
+        .select('*')
+        .eq('user_id', userId)
+      if (error) throw error
+      return data || []
+    },
+    staleTime: 60_000
+  })
+}
+
+// Upsert a comment for a symbol root
+export async function upsertSymbolComment(supabase: any, symbol_root: string, user_id: string, comment: string) {
+  const { error } = await supabase
+    .schema('hf')
+    .from('positions_symbol_comments')
+    .upsert({
+      symbol_root,
+      user_id,
+      comment,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'symbol_root,user_id' })
+  if (error) throw error
 }
 
 // Positions query hook
