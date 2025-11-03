@@ -7,6 +7,9 @@ export interface nlvMargin {
     legal_entity?: string;
     excess_maintenance_margin?: number;
     archived?: boolean;
+    sync_mode?: string;
+    net_cash_transactions_amount?: number | null;
+    net_transfers_amount?: number | null;
 }
 export declare function useNlvMarginQuery(limit: number, userId?: string | null): {
     _cleanup: () => void;

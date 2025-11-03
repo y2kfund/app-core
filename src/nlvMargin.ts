@@ -11,6 +11,9 @@ export interface nlvMargin {
   legal_entity?: string // Legal entity name from user_accounts_master
   excess_maintenance_margin?: number // Calculated field
   archived?: boolean
+  sync_mode?: string
+  net_cash_transactions_amount?: number | null
+  net_transfers_amount?: number | null
 }
 
 // nlvMargin join query hook
