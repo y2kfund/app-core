@@ -98,7 +98,7 @@ export interface ThesisConnection {
 }
 export interface SymbolComment {
     id: number;
-    symbol_root: string;
+    comment_key: string;
     user_id: string;
     comment: string;
     updated_at: string;
@@ -107,8 +107,15 @@ export declare function fetchUserAccessibleAccounts(supabase: SupabaseClient, us
 export declare function extractSymbolRoot(symbol: string): string | null;
 export declare function useThesisQuery(): import('@tanstack/vue-query').UseQueryReturnType<Thesis[], Error>;
 export declare function useThesisConnectionsQuery(): import('@tanstack/vue-query').UseQueryReturnType<ThesisConnection[], Error>;
+export declare function generateCommentKey(position: {
+    internal_account_id: string;
+    symbol: string;
+    qty: number;
+    asset_class: string;
+    conid: string;
+}): string;
 export declare function useSymbolCommentsQuery(userId: string): import('@tanstack/vue-query').UseQueryReturnType<SymbolComment[], Error>;
-export declare function upsertSymbolComment(supabase: any, symbol_root: string, user_id: string, comment: string): Promise<void>;
+export declare function upsertSymbolComment(supabase: any, commentKey: string, user_id: string, comment: string): Promise<void>;
 export declare function usePositionsQuery(accountId: string, userId?: string | null, asOfDate?: string | null): {
     _cleanup: () => void;
     data: import('vue').Ref<Position[], Position[]>;

@@ -121,7 +121,7 @@ export interface ThesisConnection {
 
 export interface SymbolComment {
   id: number
-  symbol_root: string
+  comment_key: string
   user_id: string
   comment: string
   updated_at: string
@@ -229,6 +229,17 @@ export function useThesisConnectionsQuery() {
   return query
 }
 
+export function generateCommentKey(position: {
+  internal_account_id: string
+  symbol: string
+  qty: number
+  asset_class: string
+  conid: string
+}): string {
+  // Create a stable key from multiple columns
+  return `${position.internal_account_id}|${position.symbol}|${position.qty}|${position.asset_class}|${position.conid}`
+}
+
 // Fetch comments for all symbol roots for a user
 export function useSymbolCommentsQuery(userId: string) {
   const supabase = useSupabase()
@@ -248,16 +259,16 @@ export function useSymbolCommentsQuery(userId: string) {
 }
 
 // Upsert a comment for a symbol root
-export async function upsertSymbolComment(supabase: any, symbol_root: string, user_id: string, comment: string) {
+export async function upsertSymbolComment(supabase: any, commentKey: string, user_id: string, comment: string) {
   const { error } = await supabase
     .schema('hf')
     .from('positions_symbol_comments')
     .upsert({
-      symbol_root,
+      comment_key: commentKey,
       user_id,
       comment,
       updated_at: new Date().toISOString()
-    }, { onConflict: 'symbol_root,user_id' })
+    }, { onConflict: 'comment_key,user_id' })
   if (error) throw error
 }
 
