@@ -75,17 +75,36 @@ export interface Position {
 
 export interface Trade {
   id: string
-  account_id: string
+  accountId: string
+  internal_account_id: string
+  legal_entity?: string  // Legal entity name from user_accounts_master
   symbol: string
-  asset_class: string
-  quantity: number
-  price: number
-  side: 'BUY' | 'SELL'
-  trade_date: string
-  settlement_date: string
-  commission: number
-  created_at: string
-  updated_at: string
+  assetCategory: string
+  quantity: string  // Note: quantity is text in DB
+  tradePrice: string // Note: price fields are text in DB
+  buySell: string   // This is the side field
+  tradeDate: string
+  settleDateTarget: string
+  ibCommission: string
+  fetched_at: string
+  // Add other commonly used fields
+  description?: string
+  currency?: string
+  netCash?: string
+  proceeds?: string
+  fifoPnlRealized?: string
+  openCloseIndicator?: string
+  multiplier?: string
+  mtmPnl?: string
+  closePrice?: string
+  underlyingSymbol?: string
+  putCall?: string
+  strike?: string
+  expiry?: string
+  tradeID?: string  // <-- This is what we'll use for mapping
+  conid?: string
+  underlyingConid?: string
+  tradeMoney?: string
 }
 
 export interface Thesis {
@@ -124,6 +143,15 @@ export interface SymbolComment {
   comment_key: string
   user_id: string
   comment: string
+  updated_at: string
+}
+
+export interface PositionTradeMapping {
+  id: number
+  user_id: string
+  mapping_key: string
+  trade_id: string
+  created_at: string
   updated_at: string
 }
 
@@ -227,6 +255,123 @@ export function useThesisConnectionsQuery() {
   })
 
   return query
+}
+
+export function generatePositionMappingKey(position: {
+  internal_account_id: string
+  symbol: string
+  qty: number
+  asset_class: string
+  conid: string
+}): string {
+  // Create a stable key from multiple columns
+  return `${position.internal_account_id}|${position.symbol}|${position.qty}|${position.asset_class}|${position.conid}`
+}
+
+// Fetch position-trade mappings for a user
+export async function fetchPositionTradeMappings(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Map<string, Set<string>>> {
+  try {
+    const { data, error } = await supabase
+      .schema('hf')
+      .from('position_trade_mappings')
+      .select('mapping_key, trade_id')
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('❌ Error fetching position trade mappings:', error)
+      return new Map()
+    }
+
+    const mappings = new Map<string, Set<string>>()
+    
+    if (data) {
+      data.forEach((row: any) => {
+        if (!mappings.has(row.mapping_key)) {
+          mappings.set(row.mapping_key, new Set())
+        }
+        mappings.get(row.mapping_key)!.add(row.trade_id)
+      })
+    }
+
+    return mappings
+  } catch (error) {
+    console.error('❌ Exception fetching position trade mappings:', error)
+    return new Map()
+  }
+}
+
+// Save position-trade mappings for a user
+export async function savePositionTradeMappings(
+  supabase: SupabaseClient,
+  userId: string,
+  mappingKey: string,
+  tradeIds: Set<string>
+): Promise<void> {
+  try {
+    // First, delete existing mappings for this position
+    const { error: deleteError } = await supabase
+      .schema('hf')
+      .from('position_trade_mappings')
+      .delete()
+      .eq('user_id', userId)
+      .eq('mapping_key', mappingKey)
+
+    if (deleteError) {
+      console.error('❌ Error deleting old mappings:', deleteError)
+      throw deleteError
+    }
+
+    // Then insert new mappings if any
+    if (tradeIds.size > 0) {
+      const records = Array.from(tradeIds).map(tradeId => ({
+        user_id: userId,
+        mapping_key: mappingKey,
+        trade_id: tradeId,
+        updated_at: new Date().toISOString()
+      }))
+
+      // Use upsert to handle any race conditions
+      const { error: upsertError } = await supabase
+        .schema('hf')
+        .from('position_trade_mappings')
+        .upsert(records, {
+          onConflict: 'user_id,mapping_key,trade_id',
+          ignoreDuplicates: false // Update the updated_at if already exists
+        })
+
+      if (upsertError) {
+        console.error('❌ Error upserting new mappings:', upsertError)
+        throw upsertError
+      }
+    }
+
+    console.log('✅ Successfully saved position-trade mappings:', {
+      userId,
+      mappingKey,
+      tradeCount: tradeIds.size
+    })
+  } catch (error) {
+    console.error('❌ Exception saving position trade mappings:', error)
+    throw error
+  }
+}
+
+// Query hook for position-trade mappings
+export function usePositionTradeMappingsQuery(userId: string | undefined | null) {
+  const supabase = useSupabase()
+  
+  return useQuery({
+    queryKey: ['positionTradeMappings', userId],
+    queryFn: async (): Promise<Map<string, Set<string>>> => {
+      if (!userId) return new Map()
+      return await fetchPositionTradeMappings(supabase, userId)
+    },
+    enabled: !!userId,
+    staleTime: 60_000 // 1 minute
+  })
 }
 
 export function generateCommentKey(position: {

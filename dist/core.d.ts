@@ -56,17 +56,35 @@ export interface Position {
 }
 export interface Trade {
     id: string;
-    account_id: string;
+    accountId: string;
+    internal_account_id: string;
+    legal_entity?: string;
     symbol: string;
-    asset_class: string;
-    quantity: number;
-    price: number;
-    side: 'BUY' | 'SELL';
-    trade_date: string;
-    settlement_date: string;
-    commission: number;
-    created_at: string;
-    updated_at: string;
+    assetCategory: string;
+    quantity: string;
+    tradePrice: string;
+    buySell: string;
+    tradeDate: string;
+    settleDateTarget: string;
+    ibCommission: string;
+    fetched_at: string;
+    description?: string;
+    currency?: string;
+    netCash?: string;
+    proceeds?: string;
+    fifoPnlRealized?: string;
+    openCloseIndicator?: string;
+    multiplier?: string;
+    mtmPnl?: string;
+    closePrice?: string;
+    underlyingSymbol?: string;
+    putCall?: string;
+    strike?: string;
+    expiry?: string;
+    tradeID?: string;
+    conid?: string;
+    underlyingConid?: string;
+    tradeMoney?: string;
 }
 export interface Thesis {
     id: string;
@@ -103,10 +121,28 @@ export interface SymbolComment {
     comment: string;
     updated_at: string;
 }
+export interface PositionTradeMapping {
+    id: number;
+    user_id: string;
+    mapping_key: string;
+    trade_id: string;
+    created_at: string;
+    updated_at: string;
+}
 export declare function fetchUserAccessibleAccounts(supabase: SupabaseClient, userId: string | null | undefined): Promise<string[]>;
 export declare function extractSymbolRoot(symbol: string): string | null;
 export declare function useThesisQuery(): import('@tanstack/vue-query').UseQueryReturnType<Thesis[], Error>;
 export declare function useThesisConnectionsQuery(): import('@tanstack/vue-query').UseQueryReturnType<ThesisConnection[], Error>;
+export declare function generatePositionMappingKey(position: {
+    internal_account_id: string;
+    symbol: string;
+    qty: number;
+    asset_class: string;
+    conid: string;
+}): string;
+export declare function fetchPositionTradeMappings(supabase: SupabaseClient, userId: string): Promise<Map<string, Set<string>>>;
+export declare function savePositionTradeMappings(supabase: SupabaseClient, userId: string, mappingKey: string, tradeIds: Set<string>): Promise<void>;
+export declare function usePositionTradeMappingsQuery(userId: string | undefined | null): import('@tanstack/vue-query').UseQueryReturnType<Map<string, Set<string>>, Error>;
 export declare function generateCommentKey(position: {
     internal_account_id: string;
     symbol: string;
