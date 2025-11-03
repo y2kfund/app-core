@@ -18,8 +18,9 @@ export default defineConfig({
         index: resolve(__dirname, 'src/core.ts'),
         nlvMargin: resolve(__dirname, 'src/nlvMargin.ts'),
         trades: resolve(__dirname, 'src/trades.ts'),
-        tasks: resolve(__dirname, 'src/tasks.ts'), // ✅ Already exists
-        cashTransactions: resolve(__dirname, 'src/cashTransactions.ts') // <- added
+        tasks: resolve(__dirname, 'src/tasks.ts'),
+        cashTransactions: resolve(__dirname, 'src/cashTransactions.ts'),
+        transfers: resolve(__dirname, 'src/transfers.ts')
       },
       name: 'Y2kfundCore',
       formats: ['es']

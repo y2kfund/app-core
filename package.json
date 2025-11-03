@@ -22,6 +22,10 @@
     "./cashTransactions": {
       "types": "./dist/cashTransactions.d.ts",
       "import": "./dist/cashTransactions.js"
+    },
+    "./transfers": {
+      "types": "./dist/transfers.d.ts",
+      "import": "./dist/transfers.js"
     }
   },
   "main": "./dist/index.js",

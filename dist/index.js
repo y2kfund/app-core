@@ -5,6 +5,7 @@ const V = Symbol.for("y2kfund.supabase"), Q = {
   positions: (t, o) => ["positions", t, o],
   trades: (t) => ["trades", t],
   cashTransactions: (t) => ["cashTransactions", t],
+  transfers: (t) => ["transfers", t],
   nlvMargin: (t, o) => ["nlvMargin", t, o],
   thesis: () => ["thesis"],
   thesisConnections: () => ["thesisConnections"],
