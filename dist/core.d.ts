@@ -149,6 +149,7 @@ export declare function generateCommentKey(position: {
     internal_account_id: string;
     symbol: string;
     qty: number;
+    contract_quantity?: number | null;
     asset_class: string;
     conid: string;
 }): string;
