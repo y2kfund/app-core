@@ -107,6 +107,8 @@ export interface Trade {
   conid?: string
   underlyingConid?: string
   tradeMoney?: string
+  contact_quantity?: number | null
+  accounting_quantity?: number | null
 }
 
 export interface Thesis {
