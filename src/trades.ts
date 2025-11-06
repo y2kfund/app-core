@@ -34,7 +34,7 @@ export interface Trade {
   conid?: string
   underlyingConid?: string
   tradeMoney?: string
-  contract_quantity?: number | null
+  contract_quantity?: number | null 
   accounting_quantity?: number | null
 }
 
