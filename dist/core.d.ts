@@ -148,7 +148,7 @@ export declare function usePositionTradeMappingsQuery(userId: string | undefined
 export declare function generateCommentKey(position: {
     internal_account_id: string;
     symbol: string;
-    contract_quantity: number;
+    qty: number;
     asset_class: string;
     conid: string;
 }): string;

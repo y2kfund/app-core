@@ -379,12 +379,15 @@ export function usePositionTradeMappingsQuery(userId: string | undefined | null)
 export function generateCommentKey(position: {
   internal_account_id: string
   symbol: string
-  contract_quantity: number
+  qty: number
+  contract_quantity?: number | null
   asset_class: string
   conid: string
 }): string {
   // Create a stable key from multiple columns
-  return `${position.internal_account_id}|${position.symbol}|${position.contract_quantity}|${position.asset_class}|${position.conid}`
+  // Use contract_quantity if available, otherwise fall back to qty
+  const quantity = position.contract_quantity ?? position.qty
+  return `${position.internal_account_id}|${position.symbol}|${quantity}|${position.asset_class}|${position.conid}`
 }
 
 // Fetch comments for all symbol roots for a user
