@@ -138,7 +138,7 @@ export declare function useThesisConnectionsQuery(): import('@tanstack/vue-query
 export declare function generatePositionMappingKey(position: {
     internal_account_id: string;
     symbol: string;
-    qty: number;
+    contract_quantity: number;
     asset_class: string;
     conid: string;
 }): string;
@@ -148,7 +148,7 @@ export declare function usePositionTradeMappingsQuery(userId: string | undefined
 export declare function generateCommentKey(position: {
     internal_account_id: string;
     symbol: string;
-    qty: number;
+    contract_quantity: number;
     asset_class: string;
     conid: string;
 }): string;

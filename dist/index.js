@@ -21,15 +21,15 @@ async function ee(e, r) {
     return console.log("⚠️ No userId provided, showing all positions"), [];
   try {
     console.log("👤 Fetching accessible accounts for user:", r);
-    const { data: n, error: o } = await e.schema("hf").from("user_account_access").select("internal_account_id").eq("user_id", r).eq("is_active", !0);
-    if (o)
-      return console.error("❌ Error fetching user account access:", o), [];
-    if (!n || n.length === 0)
+    const { data: o, error: n } = await e.schema("hf").from("user_account_access").select("internal_account_id").eq("user_id", r).eq("is_active", !0);
+    if (n)
+      return console.error("❌ Error fetching user account access:", n), [];
+    if (!o || o.length === 0)
       return console.log("⚠️ No account access found for user, showing all positions"), [];
-    const s = n.map((c) => c.internal_account_id);
+    const s = o.map((c) => c.internal_account_id);
     return console.log("✅ User has access to accounts:", s), s;
-  } catch (n) {
-    return console.error("❌ Exception fetching account access:", n), [];
+  } catch (o) {
+    return console.error("❌ Exception fetching account access:", o), [];
   }
 }
 function te(e) {
@@ -42,10 +42,10 @@ function ce() {
   return y({
     queryKey: r,
     queryFn: async () => {
-      const { data: o, error: s } = await e.schema("hf").from("thesisMaster").select("*").order("title");
+      const { data: n, error: s } = await e.schema("hf").from("thesisMaster").select("*").order("title");
       if (s)
         throw console.error("❌ Thesis query error:", s), s;
-      return o || [];
+      return n || [];
     },
     staleTime: 3e5
     // 5 minutes - thesis data doesn't change often
@@ -56,40 +56,40 @@ function ae() {
   return y({
     queryKey: r,
     queryFn: async () => {
-      const { data: o, error: s } = await e.schema("hf").from("positionsAndThesisConnection").select("*").order("symbol_root");
+      const { data: n, error: s } = await e.schema("hf").from("positionsAndThesisConnection").select("*").order("symbol_root");
       if (s)
         throw console.error("❌ Thesis connections query error:", s), s;
-      return o || [];
+      return n || [];
     },
     staleTime: 3e5
     // 5 minutes
   });
 }
 function ie(e) {
-  return `${e.internal_account_id}|${e.symbol}|${e.qty}|${e.asset_class}|${e.conid}`;
+  return `${e.internal_account_id}|${e.symbol}|${e.contract_quantity}|${e.asset_class}|${e.conid}`;
 }
 async function se(e, r) {
   try {
-    const { data: n, error: o } = await e.schema("hf").from("position_trade_mappings").select("mapping_key, trade_id").eq("user_id", r);
-    if (o)
-      return console.error("❌ Error fetching position trade mappings:", o), /* @__PURE__ */ new Map();
+    const { data: o, error: n } = await e.schema("hf").from("position_trade_mappings").select("mapping_key, trade_id").eq("user_id", r);
+    if (n)
+      return console.error("❌ Error fetching position trade mappings:", n), /* @__PURE__ */ new Map();
     const s = /* @__PURE__ */ new Map();
-    return n && n.forEach((c) => {
+    return o && o.forEach((c) => {
       s.has(c.mapping_key) || s.set(c.mapping_key, /* @__PURE__ */ new Set()), s.get(c.mapping_key).add(c.trade_id);
     }), s;
-  } catch (n) {
-    return console.error("❌ Exception fetching position trade mappings:", n), /* @__PURE__ */ new Map();
+  } catch (o) {
+    return console.error("❌ Exception fetching position trade mappings:", o), /* @__PURE__ */ new Map();
   }
 }
-async function le(e, r, n, o) {
+async function le(e, r, o, n) {
   try {
-    const { error: s } = await e.schema("hf").from("position_trade_mappings").delete().eq("user_id", r).eq("mapping_key", n);
+    const { error: s } = await e.schema("hf").from("position_trade_mappings").delete().eq("user_id", r).eq("mapping_key", o);
     if (s)
       throw console.error("❌ Error deleting old mappings:", s), s;
-    if (o.size > 0) {
-      const c = Array.from(o).map((h) => ({
+    if (n.size > 0) {
+      const c = Array.from(n).map((h) => ({
         user_id: r,
-        mapping_key: n,
+        mapping_key: o,
         trade_id: h,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
       })), { error: i } = await e.schema("hf").from("position_trade_mappings").upsert(c, {
@@ -102,8 +102,8 @@ async function le(e, r, n, o) {
     }
     console.log("✅ Successfully saved position-trade mappings:", {
       userId: r,
-      mappingKey: n,
-      tradeCount: o.size
+      mappingKey: o,
+      tradeCount: n.size
     });
   } catch (s) {
     throw console.error("❌ Exception saving position trade mappings:", s), s;
@@ -120,41 +120,41 @@ function ue(e) {
   });
 }
 function fe(e) {
-  return `${e.internal_account_id}|${e.symbol}|${e.qty}|${e.asset_class}|${e.conid}`;
+  return `${e.internal_account_id}|${e.symbol}|${e.contract_quantity}|${e.asset_class}|${e.conid}`;
 }
 function he(e) {
   const r = g();
   return y({
     queryKey: ["symbolComments", e],
     queryFn: async () => {
-      const { data: n, error: o } = await r.schema("hf").from("positions_symbol_comments").select("*").eq("user_id", e);
-      if (o) throw o;
-      return n || [];
+      const { data: o, error: n } = await r.schema("hf").from("positions_symbol_comments").select("*").eq("user_id", e);
+      if (n) throw n;
+      return o || [];
     },
     staleTime: 6e4
   });
 }
-async function de(e, r, n, o) {
+async function de(e, r, o, n) {
   const { error: s } = await e.schema("hf").from("positions_symbol_comments").upsert({
     comment_key: r,
-    user_id: n,
-    comment: o,
+    user_id: o,
+    comment: n,
     updated_at: (/* @__PURE__ */ new Date()).toISOString()
   }, { onConflict: "comment_key,user_id" });
   if (s) throw s;
 }
-function pe(e, r, n) {
-  const o = g(), s = B(), c = () => n && typeof n == "object" && "value" in n ? n.value : n, i = [...v.positions(e, r), c()], h = y({
+function pe(e, r, o) {
+  const n = g(), s = B(), c = () => o && typeof o == "object" && "value" in o ? o.value : o, i = [...v.positions(e, r), c()], h = y({
     queryKey: i,
     queryFn: async () => {
       var x, U, z, N;
-      const d = c(), u = await ee(o, r);
+      const d = c(), u = await ee(n, r);
       console.log("🔍 Querying positions with asOf:", d);
       let k = u;
       if (k.length === 0) {
-        const { data: t, error: a } = await o.schema("hf").from("positions").select("internal_account_id").neq("internal_account_id", null).then((E) => {
-          var m;
-          return { data: ((m = E.data) == null ? void 0 : m.map((A) => A.internal_account_id)) ?? [], error: E.error };
+        const { data: t, error: a } = await n.schema("hf").from("positions").select("internal_account_id").neq("internal_account_id", null).then((E) => {
+          var _;
+          return { data: ((_ = E.data) == null ? void 0 : _.map((A) => A.internal_account_id)) ?? [], error: E.error };
         });
         if (a)
           return console.error("❌ Error fetching all account IDs:", a), [];
@@ -162,7 +162,7 @@ function pe(e, r, n) {
       }
       let S;
       if (d) {
-        const { data: t, error: a } = await o.schema("hf").rpc("get_latest_fetched_at_per_account", {
+        const { data: t, error: a } = await n.schema("hf").rpc("get_latest_fetched_at_per_account", {
           account_ids: k,
           as_of_date: d
         });
@@ -170,7 +170,7 @@ function pe(e, r, n) {
           throw console.error("❌ Error fetching as-of fetched_at:", a), a;
         S = t || [];
       } else {
-        const { data: t, error: a } = await o.schema("hf").from("positions").select("internal_account_id, fetched_at").in("internal_account_id", k).order("fetched_at", { ascending: !1 });
+        const { data: t, error: a } = await n.schema("hf").from("positions").select("internal_account_id, fetched_at").in("internal_account_id", k).order("fetched_at", { ascending: !1 });
         if (a)
           throw console.error("❌ Error fetching latest fetched_at per account:", a), a;
         S = t || [];
@@ -179,7 +179,7 @@ function pe(e, r, n) {
       for (const t of S)
         Q.has(t.internal_account_id) || Q.set(t.internal_account_id, t.fetched_at);
       const Z = Array.from(Q.entries()).map(
-        ([t, a]) => o.schema("hf").from("positions").select("*").eq("internal_account_id", t).eq("fetched_at", a)
+        ([t, a]) => n.schema("hf").from("positions").select("*").eq("internal_account_id", t).eq("fetched_at", a)
       ), R = await Promise.all(Z), G = R.flatMap((t) => t.data || []);
       console.log("🔍 Querying positions with config:", {
         accountId: e,
@@ -190,11 +190,11 @@ function pe(e, r, n) {
       });
       const [M, b, q, T, $, H] = await Promise.all([
         R[0],
-        o.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        o.schema("hf").from("thesisMaster").select("id, title, description"),
-        o.schema("hf").from("positionsAndThesisConnection").select("*"),
-        o.schema("hf").rpc("get_latest_market_prices"),
-        r ? o.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", r) : { data: [], error: null }
+        n.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
+        n.schema("hf").from("thesisMaster").select("id, title, description"),
+        n.schema("hf").from("positionsAndThesisConnection").select("*"),
+        n.schema("hf").rpc("get_latest_market_prices"),
+        r ? n.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", r) : { data: [], error: null }
       ]);
       if (M.error)
         throw console.error("❌ Positions query error:", M.error), M.error;
@@ -231,20 +231,20 @@ function pe(e, r, n) {
       console.log(`📊 Processed ${p.size} unique conids with latest prices`);
       const O = G.map((t) => {
         const a = te(t.symbol), E = a ? K.get(a) : null;
-        let m = null, A = null, j = null, P = null;
+        let _ = null, A = null, j = null, P = null;
         if (t.asset_class === "STK" || t.asset_class === "FUND") {
           const l = p.get(t.conid);
-          m = (l == null ? void 0 : l.price) || null, A = (l == null ? void 0 : l.fetchedAt) || null;
+          _ = (l == null ? void 0 : l.price) || null, A = (l == null ? void 0 : l.fetchedAt) || null;
         } else if (t.asset_class === "OPT") {
-          const l = p.get(t.conid), _ = p.get(t.undConid);
-          j = (l == null ? void 0 : l.price) || null, P = (_ == null ? void 0 : _.price) || null, m = P, A = (_ == null ? void 0 : _.fetchedAt) || null;
+          const l = p.get(t.conid), m = p.get(t.undConid);
+          j = (l == null ? void 0 : l.price) || null, P = (m == null ? void 0 : m.price) || null, _ = P, A = (m == null ? void 0 : m.fetchedAt) || null;
         }
         let W = J.get(t.internal_account_id) || void 0;
         return F.has(t.internal_account_id) && (W = F.get(t.internal_account_id)), {
           ...t,
           legal_entity: W,
           thesis: E,
-          market_price: m,
+          market_price: _,
           market_price_fetched_at: A,
           option_market_price: j,
           underlying_market_price: P
@@ -253,7 +253,7 @@ function pe(e, r, n) {
       return console.log("✅ Enriched positions with accounts and thesis", O), O;
     },
     staleTime: 6e4
-  }), f = o.channel(`positions:${e}`).on(
+  }), f = n.channel(`positions:${e}`).on(
     "postgres_changes",
     {
       schema: "hf",
@@ -261,7 +261,7 @@ function pe(e, r, n) {
       event: "*"
     },
     () => s.invalidateQueries({ queryKey: i })
-  ).subscribe(), w = o.channel("thesis-connections").on(
+  ).subscribe(), w = n.channel("thesis-connections").on(
     "postgres_changes",
     {
       schema: "hf",
@@ -278,9 +278,9 @@ function pe(e, r, n) {
     }
   };
 }
-function me(e) {
-  const r = g(), n = v.trades(e), o = B(), s = y({
-    queryKey: n,
+function _e(e) {
+  const r = g(), o = v.trades(e), n = B(), s = y({
+    queryKey: o,
     queryFn: async () => {
       const { data: i, error: h } = await r.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
       if (h) throw h;
@@ -295,7 +295,7 @@ function me(e) {
       event: "*",
       filter: `account_id=eq.${e}`
     },
-    () => o.invalidateQueries({ queryKey: n })
+    () => n.invalidateQueries({ queryKey: o })
   ).subscribe();
   return {
     ...s,
@@ -305,13 +305,13 @@ function me(e) {
     }
   };
 }
-async function _e(e) {
+async function me(e) {
   const {
     supabaseUrl: r,
-    supabaseAnon: n,
-    supabaseClient: o,
+    supabaseAnon: o,
+    supabaseClient: n,
     query: s
-  } = e, c = o ?? I(r, n), i = new Y({
+  } = e, c = n ?? I(r, o), i = new Y({
     defaultOptions: {
       queries: {
         staleTime: (s == null ? void 0 : s.staleTime) ?? 6e4,
@@ -329,7 +329,7 @@ async function _e(e) {
 }
 export {
   V as SUPABASE,
-  _e as createCore,
+  me as createCore,
   te as extractSymbolRoot,
   se as fetchPositionTradeMappings,
   ee as fetchUserAccessibleAccounts,
@@ -344,5 +344,5 @@ export {
   he as useSymbolCommentsQuery,
   ae as useThesisConnectionsQuery,
   ce as useThesisQuery,
-  me as useTradesQuery
+  _e as useTradesQuery
 };

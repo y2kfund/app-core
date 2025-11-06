@@ -262,12 +262,12 @@ export function useThesisConnectionsQuery() {
 export function generatePositionMappingKey(position: {
   internal_account_id: string
   symbol: string
-  qty: number
+  contract_quantity: number
   asset_class: string
   conid: string
 }): string {
   // Create a stable key from multiple columns
-  return `${position.internal_account_id}|${position.symbol}|${position.qty}|${position.asset_class}|${position.conid}`
+  return `${position.internal_account_id}|${position.symbol}|${position.contract_quantity}|${position.asset_class}|${position.conid}`
 }
 
 // Fetch position-trade mappings for a user
@@ -379,12 +379,12 @@ export function usePositionTradeMappingsQuery(userId: string | undefined | null)
 export function generateCommentKey(position: {
   internal_account_id: string
   symbol: string
-  qty: number
+  contract_quantity: number
   asset_class: string
   conid: string
 }): string {
   // Create a stable key from multiple columns
-  return `${position.internal_account_id}|${position.symbol}|${position.qty}|${position.asset_class}|${position.conid}`
+  return `${position.internal_account_id}|${position.symbol}|${position.contract_quantity}|${position.asset_class}|${position.conid}`
 }
 
 // Fetch comments for all symbol roots for a user
