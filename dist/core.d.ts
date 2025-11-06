@@ -53,6 +53,8 @@ export interface Position {
         description?: string;
     } | null;
     maintenance_margin_change?: string | null;
+    contract_quantity?: number | null;
+    accounting_quantity?: number | null;
 }
 export interface Trade {
     id: string;
