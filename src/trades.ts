@@ -34,6 +34,8 @@ export interface Trade {
   conid?: string
   underlyingConid?: string
   tradeMoney?: string
+  contract_quantity?: number | null
+  accounting_quantity?: number | null
 }
 
 // Trades query hook
@@ -111,7 +113,9 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
           "tradeID",
           conid,
           "underlyingConid",
-          "tradeMoney"
+          "tradeMoney",
+          contract_quantity,
+          accounting_quantity
         `)
         .eq('fetched_at', latestFetchedAt)
 

@@ -29,6 +29,8 @@ export interface Trade {
     conid?: string;
     underlyingConid?: string;
     tradeMoney?: string;
+    contract_quantity?: number | null;
+    accounting_quantity?: number | null;
 }
 export declare function useTradesQuery(accountId: string, userId?: string | null): {
     _cleanup: () => void;
