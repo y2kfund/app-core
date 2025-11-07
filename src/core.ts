@@ -107,8 +107,8 @@ export interface Trade {
   conid?: string
   underlyingConid?: string
   tradeMoney?: string
-  contact_quantity?: number | null // Note: contract_quantity is numeric in DB
-  accounting_quantity?: number | null // Note: accounting_quantity is numeric in DB
+  contact_quantity?: number | null
+  accounting_quantity?: number | null
 }
 
 export interface Thesis {
@@ -155,6 +155,15 @@ export interface PositionTradeMapping {
   user_id: string
   mapping_key: string
   trade_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface PositionPositionMapping {
+  id: number
+  user_id: string
+  mapping_key: string
+  attached_position_key: string
   created_at: string
   updated_at: string
 }
@@ -270,6 +279,111 @@ export function generatePositionMappingKey(position: {
 }): string {
   // Create a stable key from multiple columns
   return `${position.internal_account_id}|${position.symbol}|${position.contract_quantity}|${position.asset_class}|${position.conid}`
+}
+
+// Fetch position-position mappings for a user
+export async function fetchPositionPositionMappings(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Map<string, Set<string>>> {
+  try {
+    const { data, error } = await supabase
+      .schema('hf')
+      .from('position_position_mappings')
+      .select('mapping_key, attached_position_key')
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('❌ Error fetching position-position mappings:', error)
+      return new Map()
+    }
+
+    const mappings = new Map<string, Set<string>>()
+    
+    if (data) {
+      data.forEach((row: any) => {
+        if (!mappings.has(row.mapping_key)) {
+          mappings.set(row.mapping_key, new Set())
+        }
+        mappings.get(row.mapping_key)!.add(row.attached_position_key)
+      })
+    }
+
+    return mappings
+  } catch (error) {
+    console.error('❌ Exception fetching position-position mappings:', error)
+    return new Map()
+  }
+}
+
+// Save position-position mappings
+export async function savePositionPositionMappings(
+  supabase: SupabaseClient,
+  userId: string,
+  mappingKey: string,
+  positionKeys: Set<string>
+): Promise<void> {
+  try {
+    // Delete existing mappings
+    const { error: deleteError } = await supabase
+      .schema('hf')
+      .from('position_position_mappings')
+      .delete()
+      .eq('user_id', userId)
+      .eq('mapping_key', mappingKey)
+
+    if (deleteError) {
+      console.error('❌ Error deleting old mappings:', deleteError)
+      throw deleteError
+    }
+
+    // Insert new mappings if any
+    if (positionKeys.size > 0) {
+      const records = Array.from(positionKeys).map(positionKey => ({
+        user_id: userId,
+        mapping_key: mappingKey,
+        attached_position_key: positionKey,
+        updated_at: new Date().toISOString()
+      }))
+
+      const { error: upsertError } = await supabase
+        .schema('hf')
+        .from('position_position_mappings')
+        .upsert(records, {
+          onConflict: 'user_id,mapping_key,attached_position_key',
+          ignoreDuplicates: false
+        })
+
+      if (upsertError) {
+        console.error('❌ Error upserting new mappings:', upsertError)
+        throw upsertError
+      }
+    }
+
+    console.log('✅ Successfully saved position-position mappings:', {
+      userId,
+      mappingKey,
+      positionCount: positionKeys.size
+    })
+  } catch (error) {
+    console.error('❌ Exception saving position-position mappings:', error)
+    throw error
+  }
+}
+
+// Query hook for position-position mappings
+export function usePositionPositionMappingsQuery(userId: string | undefined | null) {
+  const supabase = useSupabase()
+  
+  return useQuery({
+    queryKey: ['positionPositionMappings', userId],
+    queryFn: async (): Promise<Map<string, Set<string>>> => {
+      if (!userId) return new Map()
+      return await fetchPositionPositionMappings(supabase, userId)
+    },
+    enabled: !!userId,
+    staleTime: 60_000
+  })
 }
 
 // Fetch position-trade mappings for a user
