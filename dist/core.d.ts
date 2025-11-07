@@ -133,6 +133,14 @@ export interface PositionTradeMapping {
     created_at: string;
     updated_at: string;
 }
+export interface PositionPositionMapping {
+    id: number;
+    user_id: string;
+    mapping_key: string;
+    attached_position_key: string;
+    created_at: string;
+    updated_at: string;
+}
 export declare function fetchUserAccessibleAccounts(supabase: SupabaseClient, userId: string | null | undefined): Promise<string[]>;
 export declare function extractSymbolRoot(symbol: string): string | null;
 export declare function useThesisQuery(): import('@tanstack/vue-query').UseQueryReturnType<Thesis[], Error>;
@@ -144,6 +152,9 @@ export declare function generatePositionMappingKey(position: {
     asset_class: string;
     conid: string;
 }): string;
+export declare function fetchPositionPositionMappings(supabase: SupabaseClient, userId: string): Promise<Map<string, Set<string>>>;
+export declare function savePositionPositionMappings(supabase: SupabaseClient, userId: string, mappingKey: string, positionKeys: Set<string>): Promise<void>;
+export declare function usePositionPositionMappingsQuery(userId: string | undefined | null): import('@tanstack/vue-query').UseQueryReturnType<Map<string, Set<string>>, Error>;
 export declare function fetchPositionTradeMappings(supabase: SupabaseClient, userId: string): Promise<Map<string, Set<string>>>;
 export declare function savePositionTradeMappings(supabase: SupabaseClient, userId: string, mappingKey: string, tradeIds: Set<string>): Promise<void>;
 export declare function usePositionTradeMappingsQuery(userId: string | undefined | null): import('@tanstack/vue-query').UseQueryReturnType<Map<string, Set<string>>, Error>;
