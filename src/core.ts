@@ -813,6 +813,127 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
   }
 }
 
+/**
+ * Fetch positions that match the symbol root of a given position
+ * Used for attaching related positions in the UI
+ */
+export async function fetchPositionsBySymbolRoot(
+  supabase: SupabaseClient,
+  symbolRoot: string,
+  userId?: string | null,
+  internalAccountId?: string | null
+): Promise<Position[]> {
+  try {
+    console.log('🔍 Fetching positions for symbol root:', symbolRoot, 'account:', internalAccountId)
+
+    // Step 1: Fetch accessible accounts for the user
+    const accessibleAccountIds = await fetchUserAccessibleAccounts(supabase, userId)
+
+    // Step 2: Build the query - filter by symbol pattern and account
+    let query = supabase
+      .schema('hf')
+      .from('positions')
+      .select('*')
+      .ilike('symbol', `${symbolRoot}%`) // Symbol starts with the root
+
+    // Filter by specific account
+    if (internalAccountId) {
+      query = query.eq('internal_account_id', internalAccountId)
+    }
+
+    // Step 3: Apply account access filter if user has limited access
+    if (accessibleAccountIds.length > 0) {
+      query = query.in('internal_account_id', accessibleAccountIds)
+    }
+
+    // Step 4: Order by fetched_at (latest first)
+    query = query.order('fetched_at', { ascending: false })
+
+    const { data: positionRows, error: posError } = await query
+
+    if (posError) {
+      console.error('❌ Error fetching positions by symbol root:', posError)
+      throw posError
+    }
+
+    console.log('📊 Fetched positions count:', positionRows?.length || 0)
+
+    // Step 5: Deduplicate positions by symbol, contract_quantity, and avgPrice
+    // Keep only the first occurrence (latest fetched_at due to ordering)
+    const seenPositions = new Map<string, any>()
+    const deduplicatedRows = (positionRows || []).filter((row: any) => {
+      // Use contract_quantity for options, qty for others
+      const quantity = row.contract_quantity ?? row.qty
+      const dedupeKey = `${row.internal_account_id}|${row.symbol}|${quantity}|${row.asset_class}|${row.conid}`
+      
+      if (seenPositions.has(dedupeKey)) {
+        return false // Skip duplicate
+      }
+      
+      seenPositions.set(dedupeKey, row)
+      return true
+    })
+
+    console.log('📊 Deduplicated positions count:', deduplicatedRows.length, 
+      `(removed ${(positionRows?.length || 0) - deduplicatedRows.length} duplicates)`)
+
+    // Step 6: Fetch account data and aliases
+    const [acctRes, aliasRes] = await Promise.all([
+      supabase
+        .schema('hf')
+        .from('user_accounts_master')
+        .select('internal_account_id, legal_entity'),
+      userId
+        ? supabase
+            .schema('hf')
+            .from('user_account_alias')
+            .select('internal_account_id, alias')
+            .eq('user_id', userId)
+        : { data: [], error: null }
+    ])
+
+    // Step 7: Build lookup maps
+    const aliasMap = new Map<string, string>(
+      (aliasRes.data || []).map((r: any) => [r.internal_account_id, r.alias])
+    )
+
+    const accounts = new Map<string, string | null | undefined>(
+      (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
+    )
+
+    // Step 8: Enrich positions with account names/aliases only
+    const enriched: Position[] = deduplicatedRows.map((r: any) => {
+      let legal_entity = accounts.get(r.internal_account_id) || undefined
+      if (aliasMap.has(r.internal_account_id)) {
+        legal_entity = aliasMap.get(r.internal_account_id)
+      }
+
+      return {
+        ...r,
+        legal_entity,
+        thesis: null,
+        market_price: null,
+        market_price_fetched_at: null,
+        option_market_price: null,
+        underlying_market_price: null,
+      }
+    })
+
+    console.log('✅ Fetched and enriched positions by symbol root:', {
+      symbolRoot,
+      account: internalAccountId,
+      total: positionRows?.length || 0,
+      unique: enriched.length,
+      filtered: accessibleAccountIds.length > 0
+    })
+
+    return enriched
+  } catch (error) {
+    console.error('❌ Exception fetching positions by symbol root:', error)
+    return []
+  }
+}
+
 // Trades query hook  
 export function useTradesQuery(accountId: string) {
   const supabase = useSupabase()

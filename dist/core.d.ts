@@ -343,6 +343,11 @@ export declare function usePositionsQuery(accountId: string, userId?: string | n
     promise: import('vue').Ref<Promise<Position[]>, Promise<Position[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<Position[], Error>>;
 };
+/**
+ * Fetch positions that match the symbol root of a given position
+ * Used for attaching related positions in the UI
+ */
+export declare function fetchPositionsBySymbolRoot(supabase: SupabaseClient, symbolRoot: string, userId?: string | null, internalAccountId?: string | null): Promise<Position[]>;
 export declare function useTradesQuery(accountId: string): {
     _cleanup: () => Promise<"error" | "ok" | "timed out">;
     data: import('vue').Ref<Trade[], Trade[]>;
