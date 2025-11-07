@@ -39,7 +39,7 @@ export interface Trade {
 }
 
 // Trades query hook
-export function useTradesQuery(accountId: string, userId?: string | null) {
+export function useTradeQuery(accountId: string, userId?: string | null) {
   const supabase = useSupabase()
   const key = queryKeys.trades(accountId)
   const qc = useQueryClient()

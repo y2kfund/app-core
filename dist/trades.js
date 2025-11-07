@@ -102,5 +102,5 @@ function x(l, i) {
   };
 }
 export {
-  x as useTradesQuery
+  x as useTradeQuery
 };
