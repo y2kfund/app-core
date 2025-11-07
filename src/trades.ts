@@ -79,7 +79,39 @@ export function useTradeQuery(accountId: string, userId?: string | null) {
       const latestFetchedAt = maxFetchedAtRes.data[0].fetched_at
 
       console.log('📅 Latest fetched_at:', latestFetchedAt)
-
+      console.log('Trades fetch for these fields: ',{
+        id: true,
+        accountId: true,
+        internal_account_id: true,
+        symbol: true,
+        assetCategory: true,
+        quantity: true,
+        tradePrice: true,
+        buySell: true,
+        tradeDate: true,
+        settleDateTarget: true,
+        ibCommission: true,
+        fetched_at: true,
+        description: true,
+        currency: true,
+        netCash: true,
+        proceeds: true,
+        fifoPnlRealized: true,
+        openCloseIndicator: true,
+        multiplier: true,
+        mtmPnl: true,
+        closePrice: true,
+        underlyingSymbol: true,
+        putCall: true,
+        strike: true,
+        expiry: true,
+        tradeID: true,
+        conid:  true,
+        contract_quantity: true,
+        accounting_quantity: true,
+        underlyingConid: true,
+        tradeMoney: true
+      });
       // Step 3: Build trades query with optional access filter
       let tradesQuery = supabase
         .schema('hf')
@@ -112,10 +144,10 @@ export function useTradeQuery(accountId: string, userId?: string | null) {
           expiry,
           "tradeID",
           conid,
+          "contract_quantity",
+          "accounting_quantity",
           "underlyingConid",
-          "tradeMoney",
-          contract_quantity,
-          accounting_quantity
+          "tradeMoney"
         `)
         .eq('fetched_at', latestFetchedAt)
 
