@@ -6,7 +6,7 @@ function x(l, i) {
     queryFn: async () => {
       var h, _;
       const e = await C(a, i);
-      console.log("🔍 Querying trades with config:", {
+      console.log("Querying trades with config:", {
         accountId: l,
         schema: "hf",
         table: "trades",

@@ -107,8 +107,8 @@ export interface Trade {
   conid?: string
   underlyingConid?: string
   tradeMoney?: string
-  contact_quantity?: number | null
-  accounting_quantity?: number | null
+  contact_quantity?: number | null // Note: contract_quantity is numeric in DB
+  accounting_quantity?: number | null // Note: accounting_quantity is numeric in DB
 }
 
 export interface Thesis {

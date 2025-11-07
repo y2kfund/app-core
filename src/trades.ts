@@ -34,8 +34,8 @@ export interface Trade {
   conid?: string
   underlyingConid?: string
   tradeMoney?: string
-  contract_quantity?: number | null 
-  accounting_quantity?: number | null
+  contract_quantity?: number | null // Note: contract_quantity is numeric in DB
+  accounting_quantity?: number | null // Note: accounting_quantity is numeric in DB
 }
 
 // Trades query hook
@@ -50,7 +50,7 @@ export function useTradesQuery(accountId: string, userId?: string | null) {
       // Step 1: Fetch accessible accounts for the user
       const accessibleAccountIds = await fetchUserAccessibleAccounts(supabase, userId)
 
-      console.log('🔍 Querying trades with config:', {
+      console.log('Querying trades with config:', {
         accountId,
         schema: 'hf',
         table: 'trades',
