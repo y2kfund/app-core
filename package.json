@@ -30,6 +30,10 @@
     "./instrumentDetails": {
       "types": "./dist/instrumentDetails.d.ts",
       "import": "./dist/instrumentDetails.js"
+    },
+    "./putPositionsForSingleInstrument": {
+      "types": "./dist/putPositionsForSingleInstrument.d.ts",
+      "import": "./dist/putPositionsForSingleInstrument.js"
     }
   },
   "main": "./dist/index.js",
