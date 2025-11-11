@@ -3,22 +3,22 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { useSupabase, fetchUserAccessibleAccounts } from './core'
 import type { Position } from './core'
 
-export interface PutPosition extends Position {
-  // Add any put-specific fields if needed
+export interface CallPosition extends Position {
+  // Add any call-specific fields if needed
 }
 
 /**
- * Fetch put positions (symbols containing capital 'P') for a single instrument
+ * Fetch call positions (symbols containing capital 'P') for a single instrument
  */
-export async function fetchPutPositionsForSymbol(
+export async function fetchCallPositionsForSymbol(
   supabase: SupabaseClient,
   symbolRoot: string,
   userId?: string | null
-): Promise<PutPosition[]> {
+): Promise<CallPosition[]> {
   // Step 1: Fetch accessible accounts for the user
   const accessibleAccountIds = await fetchUserAccessibleAccounts(supabase, userId)
 
-  console.log('🔍 Querying put positions with:', {
+  console.log('🔍 Querying call positions with:', {
     symbolRoot,
     userId: userId || 'none',
     accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
@@ -42,13 +42,13 @@ export async function fetchPutPositionsForSymbol(
 
   console.log('📅 Latest fetched_at:', latestFetchedAt)
 
-  // Step 3: Fetch put positions with latest fetched_at and symbol filter
+  // Step 3: Fetch call positions with latest fetched_at and symbol filter
   let query = supabase
     .schema('hf')
     .from('positions')
     .select('*')
     .eq('fetched_at', latestFetchedAt)
-    .ilike('symbol', `%${symbolRoot}% P %`) // Contains capital 'P'
+    .ilike('symbol', `%${symbolRoot}% C %`) // Contains capital 'C' for calls
 
   // Apply account access filter if user has limited access
   if (accessibleAccountIds.length > 0) {
@@ -58,7 +58,7 @@ export async function fetchPutPositionsForSymbol(
   const { data: positionRows, error: posError } = await query
 
   if (posError) {
-    console.error('❌ Error fetching put positions:', posError)
+    console.error('❌ Error fetching call positions:', posError)
     throw posError
   }
 
@@ -82,7 +82,7 @@ export async function fetchPutPositionsForSymbol(
     throw acctRes.error
   }
 
-  console.log('✅ Put positions query success:', {
+  console.log('✅ Call positions query success:', {
     positionsCount: positionRows?.length || 0,
     accountsCount: acctRes.data?.length,
     filtered: accessibleAccountIds.length > 0
@@ -98,7 +98,7 @@ export async function fetchPutPositionsForSymbol(
   )
 
   // Step 5: Enrich positions with account names/aliases
-  const enriched: PutPosition[] = (positionRows || []).map((r: any) => {
+  const enriched: CallPosition[] = (positionRows || []).map((r: any) => {
     let legal_entity = accounts.get(r.internal_account_id) || undefined
     if (aliasMap.has(r.internal_account_id)) {
       legal_entity = aliasMap.get(r.internal_account_id)
@@ -110,24 +110,24 @@ export async function fetchPutPositionsForSymbol(
     }
   })
 
-  console.log('✅ Enriched put positions with accounts', enriched.length)
+  console.log('✅ Enriched call positions with accounts', enriched.length)
   return enriched
 }
 
 /**
- * Query hook for put positions with realtime updates
+ * Query hook for call positions with realtime updates
  */
-export function usePutPositionsQuery(symbolRoot: string, userId?: string | null) {
+export function useCallPositionsQuery(symbolRoot: string, userId?: string | null) {
   const supabase = useSupabase()
   const qc = useQueryClient()
   
-  const queryKey = ['putPositions', symbolRoot, userId]
+  const queryKey = ['callPositions', symbolRoot, userId]
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
       if (!symbolRoot) return []
-      return await fetchPutPositionsForSymbol(supabase, symbolRoot, userId)
+      return await fetchCallPositionsForSymbol(supabase, symbolRoot, userId)
     },
     enabled: !!symbolRoot,
     staleTime: 60_000 // 1 minute
@@ -135,7 +135,7 @@ export function usePutPositionsQuery(symbolRoot: string, userId?: string | null)
 
   // Setup realtime subscription
   const channel = supabase
-    .channel(`put-positions:${symbolRoot}:${userId}`)
+    .channel(`call-positions:${symbolRoot}:${userId}`)
     .on(
       'postgres_changes',
       {
@@ -145,7 +145,7 @@ export function usePutPositionsQuery(symbolRoot: string, userId?: string | null)
         filter: `symbol=ilike.%${symbolRoot}%P%`
       },
       () => {
-        console.log('🔄 Put positions changed, invalidating query...')
+        console.log('🔄 Call positions changed, invalidating query...')
         qc.invalidateQueries({ queryKey })
       }
     )

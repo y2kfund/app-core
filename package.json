@@ -34,6 +34,10 @@
     "./putPositionsForSingleInstrument": {
       "types": "./dist/putPositionsForSingleInstrument.d.ts",
       "import": "./dist/putPositionsForSingleInstrument.js"
+    },
+    "./callPositionsForSingleInstrument": {
+      "types": "./dist/callPositionsForSingleInstrument.d.ts",
+      "import": "./dist/callPositionsForSingleInstrument.js"
     }
   },
   "main": "./dist/index.js",
