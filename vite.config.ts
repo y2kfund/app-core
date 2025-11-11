@@ -20,7 +20,8 @@ export default defineConfig({
         trades: resolve(__dirname, 'src/trades.ts'),
         tasks: resolve(__dirname, 'src/tasks.ts'),
         cashTransactions: resolve(__dirname, 'src/cashTransactions.ts'),
-        transfers: resolve(__dirname, 'src/transfers.ts')
+        transfers: resolve(__dirname, 'src/transfers.ts'),
+        instrumentDetails: resolve(__dirname, 'src/instrumentDetails.ts')
       },
       name: 'Y2kfundCore',
       formats: ['es']

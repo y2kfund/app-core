@@ -26,6 +26,10 @@
     "./transfers": {
       "types": "./dist/transfers.d.ts",
       "import": "./dist/transfers.js"
+    },
+    "./instrumentDetails": {
+      "types": "./dist/instrumentDetails.d.ts",
+      "import": "./dist/instrumentDetails.js"
     }
   },
   "main": "./dist/index.js",
