@@ -27,9 +27,9 @@
       "types": "./dist/transfers.d.ts",
       "import": "./dist/transfers.js"
     },
-    "./instrumentDetails": {
-      "types": "./dist/instrumentDetails.d.ts",
-      "import": "./dist/instrumentDetails.js"
+    "./currentPositionsForSingleInstrument": {
+      "types": "./dist/currentPositionsForSingleInstrument.d.ts",
+      "import": "./dist/currentPositionsForSingleInstrument.js"
     },
     "./putPositionsForSingleInstrument": {
       "types": "./dist/putPositionsForSingleInstrument.d.ts",

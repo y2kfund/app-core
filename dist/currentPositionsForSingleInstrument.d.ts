@@ -1,6 +1,6 @@
 import { Position } from './core';
-export declare const instrumentDetailsQueryKeys: {
-    details: (userId: string | null, symbolName: string) => readonly ["instrumentDetails", string | null, string];
+export declare const currentPositionQueryKeys: {
+    details: (userId: string | null, symbolName: string) => readonly ["currentPosition", string | null, string];
 };
 /**
  * Query hook to fetch instrument details (positions) filtered by:
@@ -13,7 +13,7 @@ export declare const instrumentDetailsQueryKeys: {
  * @param symbolName - Symbol/instrument name to search for (partial match)
  * @returns Vue Query result with Position[] data
  */
-export declare function useInstrumentDetailsQuery(userId: string | null, symbolName: string): {
+export declare function useCurrentPositionQuery(userId: string | null, symbolName: string): {
     _cleanup: () => void;
     data: import('vue').Ref<Position[], Position[]>;
     error: import('vue').Ref<Error, Error>;

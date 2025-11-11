@@ -2,9 +2,9 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useSupabase, fetchUserAccessibleAccounts, type Position } from './core'
 
 // Query key factory
-export const instrumentDetailsQueryKeys = {
+export const currentPositionQueryKeys = {
   details: (userId: string | null, symbolName: string) => 
-    ['instrumentDetails', userId, symbolName] as const
+    ['currentPosition', userId, symbolName] as const
 }
 
 /**
@@ -18,13 +18,13 @@ export const instrumentDetailsQueryKeys = {
  * @param symbolName - Symbol/instrument name to search for (partial match)
  * @returns Vue Query result with Position[] data
  */
-export function useInstrumentDetailsQuery(
+export function useCurrentPositionQuery(
   userId: string | null, 
   symbolName: string
 ) {
   const supabase = useSupabase()
   const qc = useQueryClient()
-  const key = instrumentDetailsQueryKeys.details(userId, symbolName)
+  const key = currentPositionQueryKeys.details(userId, symbolName)
 
   const query = useQuery({
     queryKey: key,
@@ -36,7 +36,7 @@ export function useInstrumentDetailsQuery(
         return []
       }
 
-      console.log('🔍 [InstrumentDetails] Querying with:', {
+      console.log('🔍 [CurrentPosition] Querying with:', {
         userId: userId || 'none (all accounts)',
         symbolName: trimmedSymbol
       })

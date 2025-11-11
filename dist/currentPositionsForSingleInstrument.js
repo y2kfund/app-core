@@ -1,38 +1,38 @@
-import { useQueryClient as E, useQuery as Q } from "@tanstack/vue-query";
-import { useSupabase as D, fetchUserAccessibleAccounts as F } from "./index.js";
+import { useQueryClient as P, useQuery as E } from "@tanstack/vue-query";
+import { useSupabase as Q, fetchUserAccessibleAccounts as F } from "./index.js";
 const S = {
-  details: (n, t) => ["instrumentDetails", n, t]
+  details: (n, t) => ["currentPosition", n, t]
 };
-function M(n, t) {
-  const s = D(), w = E(), _ = S.details(n, t), q = Q({
+function K(n, t) {
+  const s = Q(), w = P(), _ = S.details(n, t), q = E({
     queryKey: _,
     queryFn: async () => {
       const o = t == null ? void 0 : t.trim();
       if (!o)
         return console.log("⚠️ No symbol provided, returning empty array"), [];
-      console.log("🔍 [InstrumentDetails] Querying with:", {
+      console.log("🔍 [CurrentPosition] Querying with:", {
         userId: n || "none (all accounts)",
         symbolName: o
       });
-      const a = await F(s, n);
-      n && a.length === 0 ? console.log("⚠️ User has no account access restrictions - showing all accounts") : a.length > 0 && console.log("🔒 User has access to accounts:", a);
-      const { data: c, error: l } = await s.schema("hf").from("positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1).single();
+      const r = await F(s, n);
+      n && r.length === 0 ? console.log("⚠️ User has no account access restrictions - showing all accounts") : r.length > 0 && console.log("🔒 User has access to accounts:", r);
+      const { data: a, error: l } = await s.schema("hf").from("positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1).single();
       if (l)
         throw console.error("❌ Error fetching latest fetched_at:", l), l;
-      if (!c || !c.fetched_at)
+      if (!a || !a.fetched_at)
         return console.log("⚠️ No positions found in database"), [];
-      const g = c.fetched_at;
+      const g = a.fetched_at;
       console.log("📅 Latest fetched_at:", g);
       let u = s.schema("hf").from("positions").select("*").eq("fetched_at", g).eq("asset_class", "STK").eq("symbol", `${o}`).order("symbol", { ascending: !0 });
-      a.length > 0 && (u = u.in("internal_account_id", a));
-      const { data: r, error: d } = await u;
+      r.length > 0 && (u = u.in("internal_account_id", r));
+      const { data: c, error: d } = await u;
       if (d)
         throw console.error("❌ Error fetching positions:", d), d;
-      if (!r || r.length === 0)
+      if (!c || c.length === 0)
         return console.log("📊 No positions found matching criteria"), [];
-      console.log(`✅ Found ${r.length} position(s) matching symbol "${o}"`);
+      console.log(`✅ Found ${c.length} position(s) matching symbol "${o}"`);
       const m = Array.from(
-        new Set(r.map((e) => e.internal_account_id))
+        new Set(c.map((e) => e.internal_account_id))
       ), [h, f] = await Promise.all([
         s.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity").in("internal_account_id", m),
         n ? s.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", n).in("internal_account_id", m) : { data: [], error: null }
@@ -42,7 +42,7 @@ function M(n, t) {
         (h.data || []).map((e) => [e.internal_account_id, e.legal_entity])
       ), p = new Map(
         (f.data || []).map((e) => [e.internal_account_id, e.alias])
-      ), A = r.map((e) => {
+      ), A = c.map((e) => {
         let y = b.get(e.internal_account_id);
         return p.has(e.internal_account_id) && (y = p.get(e.internal_account_id)), {
           ...e,
@@ -77,6 +77,6 @@ function M(n, t) {
   };
 }
 export {
-  S as instrumentDetailsQueryKeys,
-  M as useInstrumentDetailsQuery
+  S as currentPositionQueryKeys,
+  K as useCurrentPositionQuery
 };

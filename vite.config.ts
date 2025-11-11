@@ -21,7 +21,7 @@ export default defineConfig({
         tasks: resolve(__dirname, 'src/tasks.ts'),
         cashTransactions: resolve(__dirname, 'src/cashTransactions.ts'),
         transfers: resolve(__dirname, 'src/transfers.ts'),
-        instrumentDetails: resolve(__dirname, 'src/instrumentDetails.ts'),
+        currentPositionsForSingleInstrument: resolve(__dirname, 'src/currentPositionsForSingleInstrument.ts'),
         putPositionsForSingleInstrument: resolve(__dirname, 'src/putPositionsForSingleInstrument.ts'),
         callPositionsForSingleInstrument: resolve(__dirname, 'src/callPositionsForSingleInstrument.ts')
       },
