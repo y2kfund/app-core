@@ -64,9 +64,10 @@ function shouldIncludePosition(symbol: string, assetClass: string): boolean {
  * 3. Fetch all positions (STK + OPT) at latest snapshot
  * 4. Filter: Keep stocks and PUT options only
  * 5. Group by symbol root and sum |accounting_quantity|
- * 6. Fetch current market prices for each symbol
- * 7. Calculate capitalInvested = totalQuantity × currentMarketPrice
- * 8. Sort by capitalInvested DESC and return top 20
+ * 6. Fetch accounts and aliases, enrich positions with account display names
+ * 7. Fetch current market prices for each symbol
+ * 8. Calculate capitalInvested = totalQuantity × currentMarketPrice
+ * 9. Sort by capitalInvested DESC and return top 20
  * 
  * @param userId - User ID for account access control (null = all accounts)
  * @returns Vue Query result with top 20 SymbolPositionGroup[] data
@@ -180,7 +181,60 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
 
       console.log(`📦 Grouped into ${symbolGroupMap.size} unique symbol(s)`)
 
-      // Step 6: Fetch current market prices for each symbol root
+      // Step 6: Fetch accounts and aliases for account name enrichment
+      const [acctRes, aliasRes] = await Promise.all([
+        supabase
+          .schema('hf')
+          .from('user_accounts_master')
+          .select('internal_account_id, legal_entity'),
+        userId
+          ? supabase
+              .schema('hf')
+              .from('user_account_alias')
+              .select('internal_account_id, alias')
+              .eq('user_id', userId)
+          : { data: [], error: null }
+      ])
+
+      if (acctRes.error) {
+        console.error('⚠️ Error fetching accounts:', acctRes.error)
+        // Continue without enrichment
+      }
+
+      // Map: internal_account_id -> alias (preferred) or legal_entity
+      const aliasMap = new Map<string, string>(
+        (aliasRes.data || []).map((r: any) => [r.internal_account_id, r.alias])
+      )
+
+      const legalEntityMap = new Map<string, string | null>(
+        (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string | null])
+      )
+
+      console.log(`📋 Fetched ${legalEntityMap.size} account(s), ${aliasMap.size} alias(es)`)
+
+      // Enrich positions with account display names
+      symbolGroupMap.forEach((group) => {
+        group.positions = group.positions.map((pos: any) => {
+          let accountDisplayName = pos.internal_account_id // fallback to ID
+          
+          // Prefer alias if set, otherwise use legal entity
+          if (aliasMap.has(pos.internal_account_id)) {
+            accountDisplayName = aliasMap.get(pos.internal_account_id)!
+          } else if (legalEntityMap.has(pos.internal_account_id)) {
+            const legalEntity = legalEntityMap.get(pos.internal_account_id)
+            if (legalEntity) {
+              accountDisplayName = legalEntity
+            }
+          }
+
+          return {
+            ...pos,
+            account_display_name: accountDisplayName
+          }
+        })
+      })
+
+      // Step 7: Fetch current market prices for each symbol root
       const uniqueSymbolRoots = Array.from(symbolGroupMap.keys())
       
       if (uniqueSymbolRoots.length === 0) {
@@ -214,7 +268,7 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
 
       console.log(`📊 Fetched prices for ${marketPriceMap.size} symbol(s)`)
 
-      // Step 7: Calculate capital invested and build result array
+      // Step 8: Calculate capital invested and build result array
       const enrichedGroups: SymbolPositionGroup[] = []
 
       symbolGroupMap.forEach((group, symbolRoot) => {
@@ -233,7 +287,7 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
         })
       })
 
-      // Step 8: Sort by capitalInvested DESC and take top 20
+      // Step 9: Sort by capitalInvested DESC and take top 20
       enrichedGroups.sort((a, b) => b.capitalInvested - a.capitalInvested)
       const top20 = enrichedGroups.slice(0, 20)
 

@@ -20,9 +20,10 @@ export interface SymbolPositionGroup {
  * 3. Fetch all positions (STK + OPT) at latest snapshot
  * 4. Filter: Keep stocks and PUT options only
  * 5. Group by symbol root and sum |accounting_quantity|
- * 6. Fetch current market prices for each symbol
- * 7. Calculate capitalInvested = totalQuantity × currentMarketPrice
- * 8. Sort by capitalInvested DESC and return top 20
+ * 6. Fetch accounts and aliases, enrich positions with account display names
+ * 7. Fetch current market prices for each symbol
+ * 8. Calculate capitalInvested = totalQuantity × currentMarketPrice
+ * 9. Sort by capitalInvested DESC and return top 20
  *
  * @param userId - User ID for account access control (null = all accounts)
  * @returns Vue Query result with top 20 SymbolPositionGroup[] data
