@@ -25,16 +25,30 @@ export interface SymbolPositionGroup {
 
 /**
  * Helper function to extract symbol root from position symbol
+ * For OPT (options): Extract the root symbol before spaces
+ * For STK and FUND: Use the full symbol as-is
  * Examples:
- * - "META" → "META"
- * - "META   DEC2025 700 C [...]" → "META"
- * - "IBIT   JAN2026 64 C [...]" → "IBIT"
+ * - "META", STK → "META"
+ * - "IBIT", FUND → "IBIT"
+ * - "META   DEC2025 700 P [...]", OPT → "META"
+ * - "IBIT   JAN2026 64 C [...]", OPT → "IBIT"
  */
-function extractSymbolRoot(symbol: string): string {
+function extractSymbolRoot(symbol: string, assetClass: string): string {
   if (!symbol) return ''
-  // Extract first word (letters only) before any space
-  const match = symbol.match(/^([A-Z]+)/)
-  return match ? match[1] : symbol.split(/\s+/)[0]
+  
+  // For stocks and funds, use the full symbol
+  if (assetClass === 'STK' || assetClass === 'FUND') {
+    return symbol
+  }
+  
+  // For options, extract the root symbol (first word before space)
+  if (assetClass === 'OPT') {
+    const match = symbol.match(/^([A-Z]+)/)
+    return match ? match[1] : symbol.split(/\s+/)[0]
+  }
+  
+  // Fallback: return full symbol
+  return symbol
 }
 
 /**
@@ -163,7 +177,7 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
       }>()
 
       filteredPositions.forEach((pos: any) => {
-        const symbolRoot = extractSymbolRoot(pos.symbol)
+        const symbolRoot = extractSymbolRoot(pos.symbol, pos.asset_class)
         if (!symbolRoot) return
 
         // Use accounting_quantity if available, otherwise fall back to qty
