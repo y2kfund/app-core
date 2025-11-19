@@ -41,10 +41,12 @@ function extractSymbolRoot(symbol: string): string {
  * Check if a position should be included based on asset class and option type
  * Include:
  * - All stocks (asset_class = 'STK')
+ * - All funds (asset_class = 'FUND')
  * - Only PUT options (asset_class = 'OPT' and symbol contains ' P ')
  */
 function shouldIncludePosition(symbol: string, assetClass: string): boolean {
   if (assetClass === 'STK') return true
+  if (assetClass === 'FUND') return true
   
   if (assetClass === 'OPT') {
     // Check for PUT options - symbol contains ' P ' or ' P['
@@ -61,8 +63,8 @@ function shouldIncludePosition(symbol: string, assetClass: string): boolean {
  * Workflow:
  * 1. Fetch user's accessible accounts
  * 2. Get latest snapshot timestamp
- * 3. Fetch all positions (STK + OPT) at latest snapshot
- * 4. Filter: Keep stocks and PUT options only
+ * 3. Fetch all positions (STK + FUND + OPT) at latest snapshot
+ * 4. Filter: Keep stocks, funds, and PUT options only
  * 5. Group by symbol root and sum |accounting_quantity|
  * 6. Fetch accounts and aliases, enrich positions with account display names
  * 7. Fetch current market prices for each symbol
@@ -121,7 +123,7 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
         .from('positions')
         .select('*')
         .eq('fetched_at', latestFetchedAt)
-        .in('asset_class', ['STK', 'OPT'])
+        .in('asset_class', ['STK', 'OPT', 'FUND'])
 
       // Apply account access filter if user has restrictions
       if (accessibleAccountIds.length > 0) {
@@ -142,12 +144,12 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
 
       console.log(`✅ Fetched ${positionsData.length} position(s) from database`)
 
-      // Step 4: Filter positions - Keep stocks and PUT options only
+      // Step 4: Filter positions - Keep stocks, funds, and PUT options only
       const filteredPositions = positionsData.filter((pos: any) => 
         shouldIncludePosition(pos.symbol, pos.asset_class)
       )
 
-      console.log(`🔽 Filtered to ${filteredPositions.length} position(s) (STK + PUT options only)`)
+      console.log(`🔽 Filtered to ${filteredPositions.length} position(s) (STK + FUND + PUT options)`)
 
       if (filteredPositions.length === 0) {
         console.log('⚠️ No positions after filtering')

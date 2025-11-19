@@ -17,8 +17,8 @@ export interface SymbolPositionGroup {
  * Workflow:
  * 1. Fetch user's accessible accounts
  * 2. Get latest snapshot timestamp
- * 3. Fetch all positions (STK + OPT) at latest snapshot
- * 4. Filter: Keep stocks and PUT options only
+ * 3. Fetch all positions (STK + FUND + OPT) at latest snapshot
+ * 4. Filter: Keep stocks, funds, and PUT options only
  * 5. Group by symbol root and sum |accounting_quantity|
  * 6. Fetch accounts and aliases, enrich positions with account display names
  * 7. Fetch current market prices for each symbol
