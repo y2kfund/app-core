@@ -23,7 +23,8 @@ export default defineConfig({
         transfers: resolve(__dirname, 'src/transfers.ts'),
         currentPositionsForSingleInstrument: resolve(__dirname, 'src/currentPositionsForSingleInstrument.ts'),
         putPositionsForSingleInstrument: resolve(__dirname, 'src/putPositionsForSingleInstrument.ts'),
-        callPositionsForSingleInstrument: resolve(__dirname, 'src/callPositionsForSingleInstrument.ts')
+        callPositionsForSingleInstrument: resolve(__dirname, 'src/callPositionsForSingleInstrument.ts'),
+        relativeCapitalDeployedForRiskManagement: resolve(__dirname, 'src/relativeCapitalDeployedForRiskManagement.ts')
       },
       name: 'Y2kfundCore',
       formats: ['es']

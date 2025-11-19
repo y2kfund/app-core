@@ -38,6 +38,10 @@
     "./callPositionsForSingleInstrument": {
       "types": "./dist/callPositionsForSingleInstrument.d.ts",
       "import": "./dist/callPositionsForSingleInstrument.js"
+    },
+    "./relativeCapitalDeployedForRiskManagement": {
+      "types": "./dist/relativeCapitalDeployedForRiskManagement.d.ts",
+      "import": "./dist/relativeCapitalDeployedForRiskManagement.js"
     }
   },
   "main": "./dist/index.js",
