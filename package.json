@@ -15,6 +15,10 @@
       "types": "./dist/trades.d.ts",
       "import": "./dist/trades.js"
     },
+    "./orders": {
+      "types": "./dist/orders.d.ts",
+      "import": "./dist/orders.js"
+    },
     "./tasks": {
       "types": "./dist/tasks.d.ts",
       "import": "./dist/tasks.js"

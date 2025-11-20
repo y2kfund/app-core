@@ -18,6 +18,7 @@ export default defineConfig({
         index: resolve(__dirname, 'src/core.ts'),
         nlvMargin: resolve(__dirname, 'src/nlvMargin.ts'),
         trades: resolve(__dirname, 'src/trades.ts'),
+        orders: resolve(__dirname, 'src/orders.ts'),
         tasks: resolve(__dirname, 'src/tasks.ts'),
         cashTransactions: resolve(__dirname, 'src/cashTransactions.ts'),
         transfers: resolve(__dirname, 'src/transfers.ts'),

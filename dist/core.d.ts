@@ -15,6 +15,7 @@ export interface CoreOptions {
 export declare const queryKeys: {
     positions: (accountId: string, userId?: string | null) => readonly ["positions", string, string | null | undefined];
     trades: (accountId: string) => readonly ["trades", string];
+    orders: (accountId: string) => readonly ["orders", string];
     cashTransactions: (accountId: string) => readonly ["cashTransactions", string];
     transfers: (accountId: string) => readonly ["transfers", string];
     nlvMargin: (limit: number, userId?: string | null) => readonly ["nlvMargin", number, string | null | undefined];
