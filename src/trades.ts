@@ -39,7 +39,7 @@ export interface Trade {
 }
 
 // Trades query hook
-export function useTradeQuery(accountId: string, userId?: string | null) {
+export function useTradeQuery(accountId: string, userId?: string | null, symbolRoot?: string | null) {
   const supabase = useSupabase()
   const key = queryKeys.trades(accountId)
   const qc = useQueryClient()
@@ -157,6 +157,11 @@ export function useTradeQuery(accountId: string, userId?: string | null) {
         tradesQuery = tradesQuery.in('internal_account_id', accessibleAccountIds)
       } else {
         console.log('🔓 No access filter applied - showing all trades')
+      }
+
+      if (symbolRoot && symbolRoot.trim() !== '') {
+        console.log('🔍 Filtering trades for symbol root:', symbolRoot)
+        tradesQuery = tradesQuery.ilike('symbol', `${symbolRoot}%`)
       }
 
       tradesQuery = tradesQuery.order('"tradeDate"', { ascending: false })

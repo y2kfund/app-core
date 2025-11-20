@@ -1,25 +1,25 @@
-import { useQueryClient as q, useQuery as w } from "@tanstack/vue-query";
-import { useSupabase as C, queryKeys as A, fetchUserAccessibleAccounts as P } from "./index.js";
-function Q(l, i) {
-  const r = C(), d = A.trades(l), g = q(), m = w({
-    queryKey: d,
+import { useQueryClient as w, useQuery as C } from "@tanstack/vue-query";
+import { useSupabase as A, queryKeys as P, fetchUserAccessibleAccounts as D } from "./index.js";
+function R(u, i, l) {
+  const a = A(), y = P.trades(u), m = w(), p = C({
+    queryKey: y,
     queryFn: async () => {
-      var f, _;
-      const e = await P(r, i);
+      var _, h;
+      const e = await D(a, i);
       console.log("Querying trades with config:", {
-        accountId: l,
+        accountId: u,
         schema: "hf",
         table: "trades",
         userId: i || "none",
         accessibleAccountIds: e.length > 0 ? e : "all"
       });
-      const a = await r.schema("hf").from("trades").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1);
-      if (a.error)
-        throw console.error("❌ Max fetched_at query error:", a.error), a.error;
-      if (!a.data || a.data.length === 0)
+      const n = await a.schema("hf").from("trades").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1);
+      if (n.error)
+        throw console.error("❌ Max fetched_at query error:", n.error), n.error;
+      if (!n.data || n.data.length === 0)
         return console.log("⚠️ No trades found in database"), [];
-      const u = a.data[0].fetched_at;
-      console.log("📅 Latest fetched_at:", u), console.log("Trades fetch for these fields: ", {
+      const d = n.data[0].fetched_at;
+      console.log("📅 Latest fetched_at:", d), console.log("Trades fetch for these fields: ", {
         id: !0,
         accountId: !0,
         internal_account_id: !0,
@@ -52,7 +52,7 @@ function Q(l, i) {
         underlyingConid: !0,
         tradeMoney: !0
       });
-      let o = r.schema("hf").from("trades").select(`
+      let r = a.schema("hf").from("trades").select(`
           id,
           "accountId",
           internal_account_id,
@@ -84,55 +84,55 @@ function Q(l, i) {
           "accounting_quantity",
           "underlyingConid",
           "tradeMoney"
-        `).eq("fetched_at", u);
-      e.length > 0 ? (console.log("🔒 Applying access filter for accounts:", e), o = o.in("internal_account_id", e)) : console.log("🔓 No access filter applied - showing all trades"), o = o.order('"tradeDate"', { ascending: !1 });
-      const [c, s, p] = await Promise.all([
-        o,
-        r.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        i ? r.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", i) : { data: [], error: null }
+        `).eq("fetched_at", d);
+      e.length > 0 ? (console.log("🔒 Applying access filter for accounts:", e), r = r.in("internal_account_id", e)) : console.log("🔓 No access filter applied - showing all trades"), l && l.trim() !== "" && (console.log("🔍 Filtering trades for symbol root:", l), r = r.ilike("symbol", `${l}%`)), r = r.order('"tradeDate"', { ascending: !1 });
+      const [o, s, b] = await Promise.all([
+        r,
+        a.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
+        i ? a.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", i) : { data: [], error: null }
       ]);
-      if (c.error)
-        throw console.error("❌ Trades query error:", c.error), c.error;
+      if (o.error)
+        throw console.error("❌ Trades query error:", o.error), o.error;
       if (s.error)
         throw console.error("❌ Accounts query error:", s.error), s.error;
       console.log("✅ Trades query success:", {
-        latestFetchedAt: u,
-        tradesCount: (f = c.data) == null ? void 0 : f.length,
-        accountsCount: (_ = s.data) == null ? void 0 : _.length,
+        latestFetchedAt: d,
+        tradesCount: (_ = o.data) == null ? void 0 : _.length,
+        accountsCount: (h = s.data) == null ? void 0 : h.length,
         filtered: e.length > 0,
         accessibleAccounts: e.length > 0 ? e : "all"
       });
-      const b = new Map(
+      const q = new Map(
         (s.data || []).map((t) => [t.internal_account_id, t.legal_entity])
-      ), y = new Map(
-        (p.data || []).map((t) => [t.internal_account_id, t.alias])
+      ), f = new Map(
+        (b.data || []).map((t) => [t.internal_account_id, t.alias])
       );
-      return (c.data || []).map((t) => {
-        let h = b.get(t.internal_account_id) || void 0;
-        return y.has(t.internal_account_id) && (h = y.get(t.internal_account_id)), {
+      return (o.data || []).map((t) => {
+        let g = q.get(t.internal_account_id) || void 0;
+        return f.has(t.internal_account_id) && (g = f.get(t.internal_account_id)), {
           ...t,
-          legal_entity: h
+          legal_entity: g
         };
       });
     },
     staleTime: 6e4
-  }), n = r.channel(`trades:${l}`).on(
+  }), c = a.channel(`trades:${u}`).on(
     "postgres_changes",
     {
       schema: "hf",
       table: "trades",
       event: "*"
     },
-    () => g.invalidateQueries({ queryKey: d })
+    () => m.invalidateQueries({ queryKey: y })
   ).subscribe();
   return {
-    ...m,
+    ...p,
     _cleanup: () => {
       var e;
-      (e = n == null ? void 0 : n.unsubscribe) == null || e.call(n);
+      (e = c == null ? void 0 : c.unsubscribe) == null || e.call(c);
     }
   };
 }
 export {
-  Q as useTradeQuery
+  R as useTradeQuery
 };

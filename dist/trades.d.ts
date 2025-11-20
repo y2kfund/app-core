@@ -32,7 +32,7 @@ export interface Trade {
     contract_quantity?: number | null;
     accounting_quantity?: number | null;
 }
-export declare function useTradeQuery(accountId: string, userId?: string | null): {
+export declare function useTradeQuery(accountId: string, userId?: string | null, symbolRoot?: string | null): {
     _cleanup: () => void;
     data: import('vue').Ref<Trade[], Trade[]>;
     error: import('vue').Ref<Error, Error>;
