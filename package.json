@@ -46,6 +46,10 @@
     "./relativeCapitalDeployedForRiskManagement": {
       "types": "./dist/relativeCapitalDeployedForRiskManagement.d.ts",
       "import": "./dist/relativeCapitalDeployedForRiskManagement.js"
+    },
+    "./capitalAcrossThesisForRiskManagement": {
+      "types": "./dist/capitalAcrossThesisForRiskManagement.d.ts",
+      "import": "./dist/capitalAcrossThesisForRiskManagement.js"
     }
   },
   "main": "./dist/index.js",
