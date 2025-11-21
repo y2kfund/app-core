@@ -1,3 +1,4 @@
+import { computed } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useSupabase } from './core'
 import { 
@@ -71,7 +72,7 @@ export function useCapitalAcrossThesisQuery(userId: string | null) {
       console.log('📊 [CapitalAcrossThesis] Starting query for userId:', userId || 'all accounts')
 
       // Step 1: Get top 20 positions by capital
-      const top20Positions = top20Query.data?.value
+      const top20Positions = top20Query.data.value
       
       if (!top20Positions || top20Positions.length === 0) {
         console.log('⚠️ No top 20 positions found')
@@ -295,7 +296,7 @@ export function useCapitalAcrossThesisQuery(userId: string | null) {
 
       return result
     },
-    enabled: !!top20Query.data, // Only run when top20 data is available
+    enabled: computed(() => !!top20Query.data.value && top20Query.data.value.length > 0), // Only run when top20 data is available
     staleTime: 60_000, // 1 minute cache
     retry: 2
   })
