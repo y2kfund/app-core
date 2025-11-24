@@ -169,6 +169,9 @@ export declare function generateCommentKey(position: {
 }): string;
 export declare function useSymbolCommentsQuery(userId: string): import('@tanstack/vue-query').UseQueryReturnType<SymbolComment[], Error>;
 export declare function upsertSymbolComment(supabase: any, commentKey: string, user_id: string, comment: string): Promise<void>;
+export declare function fetchPositionOrderMappings(supabase: SupabaseClient, userId: string): Promise<Map<string, Set<string>>>;
+export declare function savePositionOrderMappings(supabase: SupabaseClient, userId: string, mappingKey: string, orderIds: Set<string>): Promise<void>;
+export declare function usePositionOrderMappingsQuery(userId: string | undefined | null): import('@tanstack/vue-query').UseQueryReturnType<Map<string, Set<string>>, Error>;
 export declare function usePositionsQuery(accountId: string, userId?: string | null, asOfDate?: string | null): {
     _cleanup: () => void;
     data: import('vue').Ref<Position[], Position[]>;

@@ -539,6 +539,107 @@ export async function upsertSymbolComment(supabase: any, commentKey: string, use
   if (error) throw error
 }
 
+export async function fetchPositionOrderMappings(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Map<string, Set<string>>> {
+  try {
+    const { data, error } = await supabase
+      .schema('hf')
+      .from('position_order_mappings')
+      .select('mapping_key, order_id')
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('❌ Error fetching position-order mappings:', error)
+      return new Map()
+    }
+
+    const mappings = new Map<string, Set<string>>()
+    if (data) {
+      data.forEach((row: any) => {
+        if (!mappings.has(row.mapping_key)) {
+          mappings.set(row.mapping_key, new Set())
+        }
+        mappings.get(row.mapping_key)!.add(row.order_id)
+      })
+    }
+    return mappings
+  } catch (error) {
+    console.error('❌ Exception fetching position-order mappings:', error)
+    return new Map()
+  }
+}
+
+// Save position-order mappings for a user
+export async function savePositionOrderMappings(
+  supabase: SupabaseClient,
+  userId: string,
+  mappingKey: string,
+  orderIds: Set<string>
+): Promise<void> {
+  try {
+    // Delete existing mappings for this position
+    const { error: deleteError } = await supabase
+      .schema('hf')
+      .from('position_order_mappings')
+      .delete()
+      .eq('user_id', userId)
+      .eq('mapping_key', mappingKey)
+
+    if (deleteError) {
+      console.error('❌ Error deleting old order mappings:', deleteError)
+      throw deleteError
+    }
+
+    // Insert new mappings if any
+    if (orderIds.size > 0) {
+      const records = Array.from(orderIds).map(orderId => ({
+        user_id: userId,
+        mapping_key: mappingKey,
+        order_id: orderId,
+        updated_at: new Date().toISOString()
+      }))
+
+      const { error: upsertError } = await supabase
+        .schema('hf')
+        .from('position_order_mappings')
+        .upsert(records, {
+          onConflict: 'user_id,mapping_key,order_id',
+          ignoreDuplicates: false
+        })
+
+      if (upsertError) {
+        console.error('❌ Error upserting new order mappings:', upsertError)
+        throw upsertError
+      }
+    }
+
+    console.log('✅ Successfully saved position-order mappings:', {
+      userId,
+      mappingKey,
+      orderCount: orderIds.size
+    })
+  } catch (error) {
+    console.error('❌ Exception saving position-order mappings:', error)
+    throw error
+  }
+}
+
+// Query hook for position-order mappings
+export function usePositionOrderMappingsQuery(userId: string | undefined | null) {
+  const supabase = useSupabase()
+  return useQuery({
+    queryKey: ['positionOrderMappings', userId],
+    queryFn: async (): Promise<Map<string, Set<string>>> => {
+      if (!userId) return new Map()
+      return await fetchPositionOrderMappings(supabase, userId)
+    },
+    enabled: !!userId,
+    staleTime: 60_000
+  })
+}
+
 // Positions query hook
 export function usePositionsQuery(accountId: string, userId?: string | null, asOfDate?: string | null) {
   const supabase = useSupabase()
