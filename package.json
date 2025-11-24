@@ -50,6 +50,10 @@
     "./capitalAcrossThesisForRiskManagement": {
       "types": "./dist/capitalAcrossThesisForRiskManagement.d.ts",
       "import": "./dist/capitalAcrossThesisForRiskManagement.js"
+    },
+    "./peRatioAnalysisForRiskManagement": {
+      "types": "./dist/peRatioAnalysisForRiskManagement.d.ts",
+      "import": "./dist/peRatioAnalysisForRiskManagement.js"
     }
   },
   "main": "./dist/index.js",
