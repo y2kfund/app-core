@@ -34,6 +34,7 @@ export interface Order {
   underlyingConid?: string
   orderMoney?: string
   fetched_at: string
+  isAttached?: boolean  // ADD: Flag to indicate if order is attached to a position
 }
 
 // Orders query hook
@@ -90,7 +91,37 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
 
       ordersQuery = ordersQuery.order('"tradeDate"', { ascending: false })
 
-            // Step 4: Fetch orders and accounts in parallel
+      // Step 4: Fetch attached order IDs if userId and symbolRoot are provided
+      let attachedOrderIds = new Set<string>()
+      if (userId && symbolRoot) {
+        try {
+          const pattern = `%|${symbolRoot}|%|STK|%`
+          console.log('🔍 Fetching attached orders with pattern:', pattern)
+          
+          const { data: mappings, error: mappingsError } = await supabase
+            .schema('hf')
+            .from('position_order_mappings')
+            .select('order_id')
+            .eq('user_id', userId)
+            .like('mapping_key', pattern)
+
+          console.log('🔍 Fetched position-order mappings:', mappings)
+          if (mappingsError) {
+            console.error('⚠️ Error fetching position-order mappings:', mappingsError)
+          } else if (mappings && mappings.length > 0) {
+            mappings.forEach(mapping => {
+              if (mapping.order_id) {
+                attachedOrderIds.add(String(mapping.order_id))
+              }
+            })
+            console.log(`✅ Found ${attachedOrderIds.size} attached orders`)
+          }
+        } catch (error) {
+          console.error('⚠️ Error checking attached orders:', error)
+        }
+      }
+
+      // Step 5: Fetch orders and accounts in parallel
       const [ordersRes, acctRes, aliasRes] = await Promise.all([
         ordersQuery,
         supabase
@@ -119,11 +150,12 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
         latestFetchedAt,
         ordersCount: ordersRes.data?.length,
         accountsCount: acctRes.data?.length,
+        attachedCount: attachedOrderIds.size,
         filtered: accessibleAccountIds.length > 0,
         accessibleAccounts: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
-      // Step 5: Create accounts map for efficient lookup
+      // Step 6: Create accounts map for efficient lookup
       const accounts = new Map<string, string | null | undefined>(
         (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
       )
@@ -133,7 +165,7 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
         (aliasRes.data || []).map((r: any) => [r.internal_account_id, r.alias])
       )
 
-      // Step 6: Enrich orders with legal_entity
+      // Step 7: Enrich orders with legal_entity and isAttached flag
       const orderRows = (ordersRes.data || []) as any[]
       const enriched: Order[] = orderRows.map((r: any) => {
         // Use alias if present, else default name
@@ -142,9 +174,13 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
           legal_entity = aliasMap.get(r.internal_account_id)
         }
 
+        const orderId = String(r.id)
+        const isAttached = attachedOrderIds.has(orderId)
+
         return {
           ...r,
           legal_entity,
+          isAttached,
         }
       })
 

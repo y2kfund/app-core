@@ -30,6 +30,7 @@ export interface Order {
     underlyingConid?: string;
     orderMoney?: string;
     fetched_at: string;
+    isAttached?: boolean;
 }
 export declare function useOrderQuery(accountId: string, userId?: string | null, symbolRoot?: string | null): {
     _cleanup: () => void;
