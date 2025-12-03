@@ -58,61 +58,7 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
         accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
-      // Step 2: Get the latest fetched_at timestamp
-      const maxFetchedAtRes = await supabase
-        .schema('hf')
-        .from('trades')
-        .select('fetched_at')
-        .order('fetched_at', { ascending: false })
-        .limit(1)
-
-      if (maxFetchedAtRes.error) {
-        console.error('❌ Max fetched_at query error:', maxFetchedAtRes.error)
-        throw maxFetchedAtRes.error
-      }
-
-      if (!maxFetchedAtRes.data || maxFetchedAtRes.data.length === 0) {
-        console.log('⚠️ No trades found in database')
-        return []
-      }
-
-      const latestFetchedAt = maxFetchedAtRes.data[0].fetched_at
-
-      console.log('📅 Latest fetched_at:', latestFetchedAt)
-      console.log('Trades fetch for these fields: ',{
-        id: true,
-        accountId: true,
-        internal_account_id: true,
-        symbol: true,
-        assetCategory: true,
-        quantity: true,
-        tradePrice: true,
-        buySell: true,
-        tradeDate: true,
-        settleDateTarget: true,
-        ibCommission: true,
-        fetched_at: true,
-        description: true,
-        currency: true,
-        netCash: true,
-        proceeds: true,
-        fifoPnlRealized: true,
-        openCloseIndicator: true,
-        multiplier: true,
-        mtmPnl: true,
-        closePrice: true,
-        underlyingSymbol: true,
-        putCall: true,
-        strike: true,
-        expiry: true,
-        tradeID: true,
-        conid:  true,
-        contract_quantity: true,
-        accounting_quantity: true,
-        underlyingConid: true,
-        tradeMoney: true
-      });
-      // Step 3: Build trades query with optional access filter
+      // Step 2: Build trades query (fetch all trades, no fetched_at filter)
       let tradesQuery = supabase
         .schema('hf')
         .from('trades')
@@ -149,7 +95,6 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
           "underlyingConid",
           "tradeMoney"
         `)
-        .eq('fetched_at', latestFetchedAt)
 
       // Apply access filter if user has specific account access
       if (accessibleAccountIds.length > 0) {
@@ -166,7 +111,7 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
 
       tradesQuery = tradesQuery.order('"tradeDate"', { ascending: false })
 
-            // Step 4: Fetch trades and accounts in parallel
+      // Step 3: Fetch trades and accounts in parallel
       const [tradesRes, acctRes, aliasRes] = await Promise.all([
         tradesQuery,
         supabase
@@ -192,14 +137,13 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
       }
 
       console.log('✅ Trades query success:', {
-        latestFetchedAt,
         tradesCount: tradesRes.data?.length,
         accountsCount: acctRes.data?.length,
         filtered: accessibleAccountIds.length > 0,
         accessibleAccounts: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
-      // Step 5: Create accounts map for efficient lookup
+      // Step 4: Create accounts map for efficient lookup
       const accounts = new Map<string, string | null | undefined>(
         (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
       )
@@ -209,7 +153,7 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
         (aliasRes.data || []).map((r: any) => [r.internal_account_id, r.alias])
       )
 
-      // Step 6: Enrich trades with legal_entity
+      // Step 5: Enrich trades with legal_entity
       const tradeRows = (tradesRes.data || []) as any[]
       const enriched: Trade[] = tradeRows.map((r: any) => {
         // Use alias if present, else default name

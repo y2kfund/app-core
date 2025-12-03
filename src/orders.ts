@@ -49,32 +49,11 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
       // Step 1: Fetch accessible accounts for the user
       const accessibleAccountIds = await fetchUserAccessibleAccounts(supabase, userId)
 
-      // Step 2: Get the latest fetched_at timestamp
-      const maxFetchedAtRes = await supabase
-        .schema('hf')
-        .from('orders')
-        .select('fetched_at')
-        .order('fetched_at', { ascending: false })
-        .limit(1)
-
-      if (maxFetchedAtRes.error) {
-        console.error('❌ Max fetched_at query error:', maxFetchedAtRes.error)
-        throw maxFetchedAtRes.error
-      }
-
-      if (!maxFetchedAtRes.data || maxFetchedAtRes.data.length === 0) {
-        console.log('⚠️ No orders found in database')
-        return []
-      }
-
-      const latestFetchedAt = maxFetchedAtRes.data[0].fetched_at
-
-      // Step 3: Build orders query with optional access filter
+      // Step 2: Build orders query (fetch all orders, no fetched_at filter)
       let ordersQuery = supabase
         .schema('hf')
         .from('orders')
         .select(`*`)
-        .eq('fetched_at', latestFetchedAt)
 
       // Apply access filter if user has specific account access
       if (accessibleAccountIds.length > 0) {
@@ -91,7 +70,7 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
 
       ordersQuery = ordersQuery.order('"tradeDate"', { ascending: false })
 
-      // Step 4: Fetch attached order IDs if userId and symbolRoot are provided
+      // Step 3: Fetch attached order IDs if userId and symbolRoot are provided
       let attachedOrderIds = new Set<string>()
       if (userId && symbolRoot) {
         try {
@@ -121,7 +100,7 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
         }
       }
 
-      // Step 5: Fetch orders and accounts in parallel
+      // Step 4: Fetch orders and accounts in parallel
       const [ordersRes, acctRes, aliasRes] = await Promise.all([
         ordersQuery,
         supabase
@@ -147,7 +126,6 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
       }
 
       console.log('✅ Orders query success:', {
-        latestFetchedAt,
         ordersCount: ordersRes.data?.length,
         accountsCount: acctRes.data?.length,
         attachedCount: attachedOrderIds.size,
@@ -155,7 +133,7 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
         accessibleAccounts: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
-      // Step 6: Create accounts map for efficient lookup
+      // Step 5: Create accounts map for efficient lookup
       const accounts = new Map<string, string | null | undefined>(
         (acctRes.data || []).map((r: any) => [r.internal_account_id as string, r.legal_entity as string])
       )
@@ -165,7 +143,7 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
         (aliasRes.data || []).map((r: any) => [r.internal_account_id, r.alias])
       )
 
-      // Step 7: Enrich orders with legal_entity and isAttached flag
+      // Step 6: Enrich orders with legal_entity and isAttached flag
       const orderRows = (ordersRes.data || []) as any[]
       const enriched: Order[] = orderRows.map((r: any) => {
         // Use alias if present, else default name
