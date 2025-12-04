@@ -3,13 +3,17 @@ import { Position } from './core';
 export interface PutPosition extends Position {
 }
 /**
- * Fetch put positions (symbols containing capital 'P') for a single instrument
+ * Fetch all unique fetched_at timestamps
  */
-export declare function fetchPutPositionsForSymbol(supabase: SupabaseClient, symbolRoot: string, userId?: string | null): Promise<PutPosition[]>;
+export declare function fetchAvailableFetchedAtTimestamps(supabase: SupabaseClient): Promise<string[]>;
+/**
+ * Fetch put positions (symbols containing capital 'C') for a single instrument
+ */
+export declare function fetchPutPositionsForSymbol(supabase: SupabaseClient, symbolRoot: string, userId?: string | null, fetchedAt?: string | null): Promise<PutPosition[]>;
 /**
  * Query hook for put positions with realtime updates
  */
-export declare function usePutPositionsQuery(symbolRoot: string, userId?: string | null): {
+export declare function usePutPositionsQuery(symbolRoot: string, userId?: string | null, fetchedAt?: import('vue').Ref<string | null> | string | null): {
     _cleanup: () => void;
     data: import('vue').Ref<PutPosition[], PutPosition[]>;
     error: import('vue').Ref<Error, Error>;
@@ -184,3 +188,7 @@ export declare function usePutPositionsQuery(symbolRoot: string, userId?: string
     promise: import('vue').Ref<Promise<PutPosition[]>, Promise<PutPosition[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<PutPosition[], Error>>;
 };
+/**
+ * Query hook to fetch available fetched_at timestamps
+ */
+export declare function useAvailableFetchedAtQuery(): import('@tanstack/vue-query').UseQueryReturnType<string[], Error>;
