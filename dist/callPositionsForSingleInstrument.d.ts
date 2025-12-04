@@ -3,13 +3,17 @@ import { Position } from './core';
 export interface CallPosition extends Position {
 }
 /**
- * Fetch call positions (symbols containing capital 'P') for a single instrument
+ * Fetch all unique fetched_at timestamps
  */
-export declare function fetchCallPositionsForSymbol(supabase: SupabaseClient, symbolRoot: string, userId?: string | null): Promise<CallPosition[]>;
+export declare function fetchAvailableFetchedAtTimestamps(supabase: SupabaseClient): Promise<string[]>;
+/**
+ * Fetch call positions (symbols containing capital 'C') for a single instrument
+ */
+export declare function fetchCallPositionsForSymbol(supabase: SupabaseClient, symbolRoot: string, userId?: string | null, fetchedAt?: string | null): Promise<CallPosition[]>;
 /**
  * Query hook for call positions with realtime updates
  */
-export declare function useCallPositionsQuery(symbolRoot: string, userId?: string | null): {
+export declare function useCallPositionsQuery(symbolRoot: string, userId?: string | null, fetchedAt?: import('vue').Ref<string | null> | string | null): {
     _cleanup: () => void;
     data: import('vue').Ref<CallPosition[], CallPosition[]>;
     error: import('vue').Ref<Error, Error>;
@@ -184,3 +188,7 @@ export declare function useCallPositionsQuery(symbolRoot: string, userId?: strin
     promise: import('vue').Ref<Promise<CallPosition[]>, Promise<CallPosition[]>>;
     suspense: () => Promise<import('@tanstack/query-core').QueryObserverResult<CallPosition[], Error>>;
 };
+/**
+ * Query hook to fetch available fetched_at timestamps
+ */
+export declare function useAvailableFetchedAtQuery(): import('@tanstack/vue-query').UseQueryReturnType<string[], Error>;

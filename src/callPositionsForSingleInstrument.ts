@@ -2,18 +2,42 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useSupabase, fetchUserAccessibleAccounts } from './core'
 import type { Position } from './core'
+import { computed, isRef } from 'vue' // <-- ADD THIS IMPORT
 
 export interface CallPosition extends Position {
   // Add any call-specific fields if needed
 }
 
 /**
- * Fetch call positions (symbols containing capital 'P') for a single instrument
+ * Fetch all unique fetched_at timestamps
+ */
+export async function fetchAvailableFetchedAtTimestamps(
+  supabase: SupabaseClient
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .schema('hf')
+    .from('positions')
+    .select('fetched_at')
+    .order('fetched_at', { ascending: false })
+
+  if (error) {
+    console.error('❌ Error fetching fetched_at timestamps:', error)
+    throw error
+  }
+
+  // Get unique timestamps
+  const uniqueTimestamps = [...new Set(data.map(d => d.fetched_at))]
+  return uniqueTimestamps
+}
+
+/**
+ * Fetch call positions (symbols containing capital 'C') for a single instrument
  */
 export async function fetchCallPositionsForSymbol(
   supabase: SupabaseClient,
   symbolRoot: string,
-  userId?: string | null
+  userId?: string | null,
+  fetchedAt?: string | null
 ): Promise<CallPosition[]> {
   // Step 1: Fetch accessible accounts for the user
   const accessibleAccountIds = await fetchUserAccessibleAccounts(supabase, userId)
@@ -21,33 +45,38 @@ export async function fetchCallPositionsForSymbol(
   console.log('🔍 Querying call positions with:', {
     symbolRoot,
     userId: userId || 'none',
+    fetchedAt: fetchedAt || 'latest',
     accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
   })
 
-  // Step 2: Get the latest fetched_at timestamp
-  const { data: latestFetchedAtData, error: fetchedAtError } = await supabase
-    .schema('hf')
-    .from('positions')
-    .select('fetched_at')
-    .order('fetched_at', { ascending: false })
-    .limit(1)
-    .single()
+  // Step 2: Get the fetched_at timestamp to use
+  let targetFetchedAt = fetchedAt
+  
+  if (!targetFetchedAt) {
+    const { data: latestFetchedAtData, error: fetchedAtError } = await supabase
+      .schema('hf')
+      .from('positions')
+      .select('fetched_at')
+      .order('fetched_at', { ascending: false })
+      .limit(1)
+      .single()
 
-  if (fetchedAtError) {
-    console.error('❌ Error fetching latest fetched_at:', fetchedAtError)
-    throw fetchedAtError
+    if (fetchedAtError) {
+      console.error('❌ Error fetching latest fetched_at:', fetchedAtError)
+      throw fetchedAtError
+    }
+
+    targetFetchedAt = latestFetchedAtData.fetched_at
   }
 
-  const latestFetchedAt = latestFetchedAtData.fetched_at
+  console.log('📅 Using fetched_at:', targetFetchedAt)
 
-  console.log('📅 Latest fetched_at:', latestFetchedAt)
-
-  // Step 3: Fetch call positions with latest fetched_at and symbol filter
+  // Step 3: Fetch call positions with specified fetched_at and symbol filter
   let query = supabase
     .schema('hf')
     .from('positions')
     .select('*')
-    .eq('fetched_at', latestFetchedAt)
+    .eq('fetched_at', targetFetchedAt)
     .ilike('symbol', `%${symbolRoot}% C %`) // Contains capital 'C' for calls
 
   // Apply account access filter if user has limited access
@@ -117,17 +146,33 @@ export async function fetchCallPositionsForSymbol(
 /**
  * Query hook for call positions with realtime updates
  */
-export function useCallPositionsQuery(symbolRoot: string, userId?: string | null) {
+export function useCallPositionsQuery(
+  symbolRoot: string, 
+  userId?: string | null, 
+  fetchedAt?: import('vue').Ref<string | null> | string | null
+) {
   const supabase = useSupabase()
   const qc = useQueryClient()
   
-  const queryKey = ['callPositions', symbolRoot, userId]
+  // Handle both reactive refs and plain values - CHANGED: use imported isRef
+  const fetchedAtValue = isRef(fetchedAt) 
+    ? computed(() => (fetchedAt as any).value)
+    : computed(() => fetchedAt)
+  
+  const queryKey = computed(() => 
+    ['callPositions', symbolRoot, userId, fetchedAtValue.value]
+  )
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
       if (!symbolRoot) return []
-      return await fetchCallPositionsForSymbol(supabase, symbolRoot, userId)
+      return await fetchCallPositionsForSymbol(
+        supabase, 
+        symbolRoot, 
+        userId, 
+        fetchedAtValue.value
+      )
     },
     enabled: !!symbolRoot,
     staleTime: 60_000 // 1 minute
@@ -135,18 +180,18 @@ export function useCallPositionsQuery(symbolRoot: string, userId?: string | null
 
   // Setup realtime subscription
   const channel = supabase
-    .channel(`call-positions:${symbolRoot}:${userId}`)
+    .channel(`call-positions:${symbolRoot}:${userId}:${fetchedAtValue.value || 'latest'}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'hf',
         table: 'positions',
-        filter: `symbol=ilike.%${symbolRoot}%P%`
+        filter: `symbol=ilike.%${symbolRoot}%C%`
       },
       () => {
         console.log('🔄 Call positions changed, invalidating query...')
-        qc.invalidateQueries({ queryKey })
+        qc.invalidateQueries({ queryKey: queryKey.value })
       }
     )
     .subscribe()
@@ -157,4 +202,17 @@ export function useCallPositionsQuery(symbolRoot: string, userId?: string | null
   }
 
   return { ...query, _cleanup: cleanup }
+}
+
+/**
+ * Query hook to fetch available fetched_at timestamps
+ */
+export function useAvailableFetchedAtQuery() {
+  const supabase = useSupabase()
+  
+  return useQuery({
+    queryKey: ['availableFetchedAt'],
+    queryFn: () => fetchAvailableFetchedAtTimestamps(supabase),
+    staleTime: 300_000 // 5 minutes
+  })
 }
