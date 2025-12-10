@@ -1,61 +1,103 @@
-import { useQueryClient as d, useQuery as p } from "@tanstack/vue-query";
-import { useSupabase as h, queryKeys as b, fetchUserAccessibleAccounts as v } from "./index.js";
-function M(r, i) {
-  const s = h(), o = b.nlvMargin(r, i), u = d(), f = p({
-    queryKey: o,
+import { useQueryClient as A, useQuery as E } from "@tanstack/vue-query";
+import { useSupabase as N, queryKeys as Q, fetchUserAccessibleAccounts as S } from "./index.js";
+function V(g, _, u) {
+  const c = N(), v = () => u && typeof u == "object" && "value" in u ? u.value : u, h = [...Q.nlvMargin(g, _), v()], p = A(), q = E({
+    queryKey: h,
     queryFn: async () => {
-      const n = await v(s, i);
+      const r = v(), i = await S(c, _);
       console.log("🔍 Querying NLV/Margin with config:", {
-        limit: r,
-        userId: i || "none",
-        accessibleAccountIds: n.length > 0 ? n : "all"
+        limit: g,
+        userId: _ || "none",
+        asOfDate: r || "latest",
+        accessibleAccountIds: i.length > 0 ? i : "all"
       });
-      const { data: t, error: _ } = await s.schema("hf").rpc("get_nlv_margin_with_excess_and_sync_type", {
-        p_limit: r
-      });
-      if (_) throw _;
-      let e = t || [], g = /* @__PURE__ */ new Map();
-      if (i) {
-        const { data: a } = await s.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", i);
-        g = new Map((a || []).map((y) => [y.internal_account_id, y.alias]));
+      let t = [];
+      if (r) {
+        const n = (/* @__PURE__ */ new Date(r + "T23:59:59.999Z")).toISOString();
+        console.log("📅 Fetching historical NLV/Margin data for date:", r, "up to:", n);
+        let l = i;
+        if (l.length === 0) {
+          const { data: e, error: a } = await c.schema("hf").from("netliquidation").select("internal_account_id").neq("internal_account_id", null);
+          if (a)
+            throw console.error("❌ Error fetching all account IDs:", a), a;
+          l = Array.from(new Set((e || []).map((s) => s.internal_account_id)));
+        }
+        const M = l.map(async (e) => {
+          const { data: a, error: s } = await c.schema("hf").from("netliquidation").select("*").eq("internal_account_id", e).lte("fetched_at", n).order("fetched_at", { ascending: !1 }).limit(1).single();
+          if (s && s.code !== "PGRST116")
+            return console.error(`❌ Error fetching NLV for ${e}:`, s), null;
+          const { data: o, error: y } = await c.schema("hf").from("maintenance_margin").select("*").eq("internal_account_id", e).lte("fetched_at", n).order("fetched_at", { ascending: !1 }).limit(1).single();
+          return y && y.code !== "PGRST116" ? (console.error(`❌ Error fetching MM for ${e}:`, y), null) : !a || !o ? null : {
+            nlv_id: a.id,
+            nlv_val: a.nlv,
+            fetched_at_val: a.fetched_at,
+            maintenance_val: parseFloat(o.maintenance),
+            nlv_internal_account_id: e,
+            excess_maintenance_margin: a.nlv - parseFloat(o.maintenance)
+          };
+        });
+        t = (await Promise.all(M)).filter((e) => e !== null);
+        const { data: w } = await c.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity, archived, sync_mode"), m = new Map(
+          (w || []).map((e) => [e.internal_account_id, e])
+        );
+        t = t.map((e) => {
+          var a, s, o;
+          return {
+            ...e,
+            legal_entity: (a = m.get(e.nlv_internal_account_id || "")) == null ? void 0 : a.legal_entity,
+            archived: ((s = m.get(e.nlv_internal_account_id || "")) == null ? void 0 : s.archived) || !1,
+            sync_mode: (o = m.get(e.nlv_internal_account_id || "")) == null ? void 0 : o.sync_mode
+          };
+        });
+      } else {
+        const { data: n, error: l } = await c.schema("hf").rpc("get_nlv_margin_with_excess_and_sync_type", {
+          p_limit: g
+        });
+        if (l) throw l;
+        t = n || [];
       }
-      return e = e.map((a) => ({
-        ...a,
-        legal_entity: g.get(a.nlv_internal_account_id || "") || a.legal_entity
-      })), n.length > 0 && e.length > 0 ? e[0] && "nlv_internal_account_id" in e[0] ? (console.log("🔒 Applying access filter for NLV/Margin data"), e = e.filter(
-        (a) => a.nlv_internal_account_id && n.includes(a.nlv_internal_account_id)
-      )) : console.warn("⚠️ NLV/Margin data missing nlv_internal_account_id field, cannot filter by access") : console.log("🔓 No access filter applied - showing all NLV/Margin data"), console.log("✅ NLV/Margin query success:", {
-        totalRows: (t == null ? void 0 : t.length) || 0,
-        filteredRows: e.length,
-        filtered: n.length > 0
-      }), e;
+      let b = /* @__PURE__ */ new Map();
+      if (_) {
+        const { data: n } = await c.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", _);
+        b = new Map((n || []).map((l) => [l.internal_account_id, l.alias]));
+      }
+      return t = t.map((n) => ({
+        ...n,
+        legal_entity: b.get(n.nlv_internal_account_id || "") || n.legal_entity
+      })), i.length > 0 && t.length > 0 && t[0] && "nlv_internal_account_id" in t[0] && (console.log("🔒 Applying access filter for NLV/Margin data"), t = t.filter(
+        (n) => n.nlv_internal_account_id && i.includes(n.nlv_internal_account_id)
+      )), console.log("✅ NLV/Margin query success:", {
+        totalRows: t.length,
+        asOfDate: r || "latest",
+        filtered: i.length > 0
+      }), t;
     },
     staleTime: 6e4
-  }), c = s.channel("netliquidation_all").on(
+  }), d = c.channel("netliquidation_all").on(
     "postgres_changes",
     {
       schema: "hf",
       table: "netliquidation",
       event: "*"
     },
-    () => u.invalidateQueries({ queryKey: o })
-  ).subscribe(), l = s.channel("maintenance_margin_all").on(
+    () => p.invalidateQueries({ queryKey: h })
+  ).subscribe(), f = c.channel("maintenance_margin_all").on(
     "postgres_changes",
     {
       schema: "hf",
       table: "maintenance_margin",
       event: "*"
     },
-    () => u.invalidateQueries({ queryKey: o })
+    () => p.invalidateQueries({ queryKey: h })
   ).subscribe();
   return {
-    ...f,
+    ...q,
     _cleanup: () => {
-      var n, t;
-      (n = c == null ? void 0 : c.unsubscribe) == null || n.call(c), (t = l == null ? void 0 : l.unsubscribe) == null || t.call(l);
+      var r, i;
+      (r = d == null ? void 0 : d.unsubscribe) == null || r.call(d), (i = f == null ? void 0 : f.unsubscribe) == null || i.call(f);
     }
   };
 }
 export {
-  M as useNlvMarginQuery
+  V as useNlvMarginQuery
 };
