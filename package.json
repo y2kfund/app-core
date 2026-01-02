@@ -11,6 +11,10 @@
       "types": "./dist/nlvMargin.d.ts",
       "import": "./dist/nlvMargin.js"
     },
+    "./settledCash": {
+      "types": "./dist/settledCash.d.ts",
+      "import": "./dist/settledCash.js"
+    },
     "./trades": {
       "types": "./dist/trades.d.ts",
       "import": "./dist/trades.js"
