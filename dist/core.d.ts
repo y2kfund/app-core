@@ -19,6 +19,7 @@ export declare const queryKeys: {
     cashTransactions: (accountId: string) => readonly ["cashTransactions", string];
     transfers: (accountId: string) => readonly ["transfers", string];
     nlvMargin: (limit: number, userId?: string | null) => readonly ["nlvMargin", number, string | null | undefined];
+    settledCash: (limit: number, userId?: string | null) => readonly ["settledCash", number, string | null | undefined];
     thesis: () => readonly ["thesis"];
     thesisConnections: () => readonly ["thesisConnections"];
     userAccountAccess: (userId: string) => readonly ["userAccountAccess", string];

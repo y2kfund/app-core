@@ -8,6 +8,7 @@ const Z = Symbol.for("y2kfund.supabase"), Q = {
   cashTransactions: (e) => ["cashTransactions", e],
   transfers: (e) => ["transfers", e],
   nlvMargin: (e, n) => ["nlvMargin", e, n],
+  settledCash: (e, n) => ["settledCash", e, n],
   thesis: () => ["thesis"],
   thesisConnections: () => ["thesisConnections"],
   userAccountAccess: (e) => ["userAccountAccess", e]
@@ -288,7 +289,7 @@ function qe(e, n, r) {
         userId: n || "none",
         accessibleAccountIds: d.length > 0 ? d : "all"
       });
-      const [S, T, A, C, O, H] = await Promise.all([
+      const [S, T, C, A, O, H] = await Promise.all([
         w[0],
         o.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
         o.schema("hf").from("thesisMaster").select("id, title, description"),
@@ -300,16 +301,16 @@ function qe(e, n, r) {
         throw console.error("❌ Positions query error:", S.error), S.error;
       if (T.error)
         throw console.error("❌ Accounts query error:", T.error), T.error;
-      if (A.error)
-        throw console.error("❌ Thesis query error:", A.error), A.error;
       if (C.error)
-        throw console.error("❌ Thesis connections query error:", C.error), C.error;
+        throw console.error("❌ Thesis query error:", C.error), C.error;
+      if (A.error)
+        throw console.error("❌ Thesis connections query error:", A.error), A.error;
       let $ = [];
       O.error ? console.error("❌ Market price query error:", O.error) : ($ = O.data || [], console.log(`📊 Fetched ${$.length} market price records`)), console.log("✅ Positions query success:", {
         positionsCount: (U = S.data) == null ? void 0 : U.length,
         accountsCount: (N = T.data) == null ? void 0 : N.length,
-        thesisCount: (j = A.data) == null ? void 0 : j.length,
-        thesisConnectionsCount: (B = C.data) == null ? void 0 : B.length,
+        thesisCount: (j = C.data) == null ? void 0 : j.length,
+        thesisConnectionsCount: (B = A.data) == null ? void 0 : B.length,
         marketPricesCount: $.length,
         filtered: d.length > 0,
         accessibleAccounts: d.length > 0 ? d : "all"
@@ -319,9 +320,9 @@ function qe(e, n, r) {
       ), J = new Map(
         (T.data || []).map((s) => [s.internal_account_id, s.legal_entity])
       ), L = new Map(
-        (A.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
+        (C.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
       ), K = /* @__PURE__ */ new Map();
-      (C.data || []).forEach((s) => {
+      (A.data || []).forEach((s) => {
         const l = L.get(s.thesis_id);
         l && K.set(s.symbol_root, l);
       });

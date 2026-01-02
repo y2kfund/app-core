@@ -28,6 +28,7 @@ export const queryKeys = {
   cashTransactions: (accountId: string) => ['cashTransactions', accountId] as const,
   transfers: (accountId: string) => ['transfers', accountId] as const,
   nlvMargin: (limit: number, userId?: string | null) => ['nlvMargin', limit, userId] as const,
+  settledCash: (limit: number, userId?: string | null) => ['settledCash', limit, userId] as const,
   thesis: () => ['thesis'] as const,
   thesisConnections: () => ['thesisConnections'] as const,
   userAccountAccess: (userId: string) => ['userAccountAccess', userId] as const,
