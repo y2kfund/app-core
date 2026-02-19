@@ -1,4 +1,5 @@
 import { Ref } from 'vue';
+
 export interface nlvMargin {
     nlv_id: number;
     nlv_val: number;

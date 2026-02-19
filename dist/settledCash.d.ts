@@ -1,4 +1,5 @@
 import { Ref } from 'vue';
+
 export interface SettledCash {
     id: number;
     internal_account_id: string;

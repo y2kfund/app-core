@@ -75,6 +75,7 @@ export interface Position {
   maintenance_margin_change?: string | null
   contract_quantity?: number | null
   accounting_quantity?: number | null
+  delta?: number | null
 }
 
 export interface Trade {
@@ -301,7 +302,7 @@ export async function fetchPositionPositionMappings(
     }
 
     const mappings = new Map<string, Set<string>>()
-    
+
     if (data) {
       data.forEach((row: any) => {
         if (!mappings.has(row.mapping_key)) {
@@ -376,7 +377,7 @@ export async function savePositionPositionMappings(
 // Query hook for position-position mappings
 export function usePositionPositionMappingsQuery(userId: string | undefined | null) {
   const supabase = useSupabase()
-  
+
   return useQuery({
     queryKey: ['positionPositionMappings', userId],
     queryFn: async (): Promise<Map<string, Set<string>>> => {
@@ -406,7 +407,7 @@ export async function fetchPositionTradeMappings(
     }
 
     const mappings = new Map<string, Set<string>>()
-    
+
     if (data) {
       data.forEach((row: any) => {
         if (!mappings.has(row.mapping_key)) {
@@ -482,7 +483,7 @@ export async function savePositionTradeMappings(
 // Query hook for position-trade mappings
 export function usePositionTradeMappingsQuery(userId: string | undefined | null) {
   const supabase = useSupabase()
-  
+
   return useQuery({
     queryKey: ['positionTradeMappings', userId],
     queryFn: async (): Promise<Map<string, Set<string>>> => {
@@ -758,10 +759,10 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
           .rpc('get_latest_market_prices'),
         userId
           ? supabase
-              .schema('hf')
-              .from('user_account_alias')
-              .select('internal_account_id, alias')
-              .eq('user_id', userId)
+            .schema('hf')
+            .from('user_account_alias')
+            .select('internal_account_id, alias')
+            .eq('user_id', userId)
           : { data: [], error: null }
       ])
 
@@ -815,12 +816,12 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
 
       // Create symbol root -> thesis map
       const symbolRootThesisMap = new Map<string, any>()
-      ;(thesisConnectionsRes.data || []).forEach((conn: any) => {
-        const thesis = thesisMap.get(conn.thesis_id)
-        if (thesis) {
-          symbolRootThesisMap.set(conn.symbol_root, thesis)
-        }
-      })
+        ; (thesisConnectionsRes.data || []).forEach((conn: any) => {
+          const thesis = thesisMap.get(conn.thesis_id)
+          if (thesis) {
+            symbolRootThesisMap.set(conn.symbol_root, thesis)
+          }
+        })
 
       // Create market price map by conid (latest per conid)
       const marketPriceMap = new Map<string, { price: number, fetchedAt: string }>()
@@ -835,13 +836,13 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
         // Extract symbol root and find thesis
         const symbolRoot = extractSymbolRoot(r.symbol)
         const thesis = symbolRoot ? symbolRootThesisMap.get(symbolRoot) : null
-        
+
         // Market price logic
         let market_price: number | null = null
         let market_price_fetched_at: string | null = null
         let option_market_price: number | null = null
         let underlying_market_price: number | null = null
-        
+
         if (r.asset_class === 'STK' || r.asset_class === 'FUND') {
           // For stocks and funds, use conid for market price
           const priceData = marketPriceMap.get(r.conid)
@@ -851,15 +852,15 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
           // For options, get both option and underlying prices
           const optionPriceData = marketPriceMap.get(r.conid)
           const underlyingPriceData = marketPriceMap.get(r.undConid)
-          
+
           option_market_price = optionPriceData?.price || null
           underlying_market_price = underlyingPriceData?.price || null
-          
+
           // Set market_price to underlying price for backward compatibility (Ul CM Price)
           market_price = underlying_market_price
           market_price_fetched_at = underlyingPriceData?.fetchedAt || null
         }
-        
+
         // Use alias if present, else default name
         let legal_entity = accounts.get(r.internal_account_id) || undefined
         if (aliasMap.has(r.internal_account_id)) {
@@ -886,10 +887,10 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
   const positionsChannel = supabase
     .channel(`positions:${accountId}`)
     .on('postgres_changes',
-      { 
-        schema: 'hf', 
-        table: 'positions', 
-        event: '*', 
+      {
+        schema: 'hf',
+        table: 'positions',
+        event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })
     )
@@ -898,17 +899,17 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
   const connectionsChannel = supabase
     .channel('thesis-connections')
     .on('postgres_changes',
-      { 
-        schema: 'hf', 
-        table: 'positionsAndThesisConnection', 
-        event: '*', 
+      {
+        schema: 'hf',
+        table: 'positionsAndThesisConnection',
+        event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })
     )
     .subscribe()
 
-  return { 
-    ...query, 
+  return {
+    ...query,
     _cleanup: () => {
       positionsChannel?.unsubscribe?.()
       connectionsChannel?.unsubscribe?.()
@@ -968,16 +969,16 @@ export async function fetchPositionsBySymbolRoot(
       // Use contract_quantity for options, qty for others
       const quantity = row.contract_quantity ?? row.qty
       const dedupeKey = `${row.internal_account_id}|${row.symbol}|${quantity}|${row.asset_class}|${row.conid}`
-      
+
       if (seenPositions.has(dedupeKey)) {
         return false // Skip duplicate
       }
-      
+
       seenPositions.set(dedupeKey, row)
       return true
     })
 
-    console.log('📊 Deduplicated positions count:', deduplicatedRows.length, 
+    console.log('📊 Deduplicated positions count:', deduplicatedRows.length,
       `(removed ${(positionRows?.length || 0) - deduplicatedRows.length} duplicates)`)
 
     // Step 6: Fetch account data and aliases
@@ -988,10 +989,10 @@ export async function fetchPositionsBySymbolRoot(
         .select('internal_account_id, legal_entity'),
       userId
         ? supabase
-            .schema('hf')
-            .from('user_account_alias')
-            .select('internal_account_id, alias')
-            .eq('user_id', userId)
+          .schema('hf')
+          .from('user_account_alias')
+          .select('internal_account_id, alias')
+          .eq('user_id', userId)
         : { data: [], error: null }
     ])
 
@@ -1052,7 +1053,7 @@ export function useTradesQuery(accountId: string) {
         .select('*')
         .eq('account_id', accountId)
         .order('trade_date', { ascending: false })
-      
+
       if (error) throw error
       return data || []
     },
@@ -1062,18 +1063,18 @@ export function useTradesQuery(accountId: string) {
   const channel = supabase
     .channel(`trades:${accountId}`)
     .on('postgres_changes',
-      { 
-        schema: 'hf', 
-        table: 'trades', 
-        event: '*', 
-        filter: `account_id=eq.${accountId}` 
+      {
+        schema: 'hf',
+        table: 'trades',
+        event: '*',
+        filter: `account_id=eq.${accountId}`
       },
       () => qc.invalidateQueries({ queryKey: key })
     )
     .subscribe()
 
-  return { 
-    ...query, 
+  return {
+    ...query,
     _cleanup: () => channel?.unsubscribe?.()
   }
 }

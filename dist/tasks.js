@@ -1,6 +1,6 @@
-import { useQuery as m, useQueryClient as l, useMutation as y } from "@tanstack/vue-query";
+import { useQueryClient as m, useMutation as l, useQuery as y } from "@tanstack/vue-query";
 import { useSupabase as o } from "./index.js";
-import { computed as w, unref as d } from "vue";
+import { unref as d, computed as w } from "vue";
 const r = {
   all: ["tasks"],
   list: (t) => [...r.all, "list", t],
@@ -10,7 +10,7 @@ const r = {
 };
 function b(t) {
   const a = o();
-  return m({
+  return y({
     queryKey: w(() => {
       const e = t ? d(t) : {};
       return r.list(e);
@@ -30,7 +30,7 @@ function b(t) {
 }
 function Q(t) {
   const a = o();
-  return m({
+  return y({
     queryKey: r.detail(t),
     queryFn: async () => {
       const { data: e, error: s } = await a.schema("hf").from("tasks").select("*").eq("id", t).single();
@@ -42,7 +42,7 @@ function Q(t) {
 }
 function g(t) {
   const a = o();
-  return m({
+  return y({
     queryKey: r.comments(t),
     queryFn: async () => {
       const { data: e, error: s } = await a.schema("hf").from("task_comments").select("*").eq("task_id", t).order("created_at", { ascending: !1 });
@@ -54,7 +54,7 @@ function g(t) {
 }
 function K(t) {
   const a = o();
-  return m({
+  return y({
     queryKey: r.history(t),
     queryFn: async () => {
       const { data: e, error: s } = await a.schema("hf").from("task_history").select("*").eq("task_id", t).order("changed_at", { ascending: !1 });
@@ -65,8 +65,8 @@ function K(t) {
   });
 }
 function v() {
-  const t = o(), a = l();
-  return y({
+  const t = o(), a = m();
+  return l({
     mutationFn: async (e) => {
       const { data: s, error: n } = await t.schema("hf").from("tasks").insert(e).select().single();
       if (n) throw n;
@@ -78,8 +78,8 @@ function v() {
   });
 }
 function F() {
-  const t = o(), a = l();
-  return y({
+  const t = o(), a = m();
+  return l({
     mutationFn: async ({
       id: e,
       updates: s,
@@ -108,8 +108,8 @@ function F() {
   });
 }
 function C() {
-  const t = o(), a = l();
-  return y({
+  const t = o(), a = m();
+  return l({
     mutationFn: async (e) => {
       const { data: s, error: n } = await t.schema("hf").from("task_comments").insert(e).select().single();
       if (n) throw n;
@@ -121,8 +121,8 @@ function C() {
   });
 }
 function T() {
-  const t = o(), a = l();
-  return y({
+  const t = o(), a = m();
+  return l({
     mutationFn: async (e) => {
       await t.schema("hf").from("task_comments").delete().eq("task_id", e), await t.schema("hf").from("task_history").delete().eq("task_id", e);
       const { error: s } = await t.schema("hf").from("tasks").delete().eq("id", e);
@@ -135,8 +135,8 @@ function T() {
   });
 }
 function S() {
-  const t = o(), a = l();
-  return y({
+  const t = o(), a = m();
+  return l({
     mutationFn: async ({ id: e, comment: s }) => {
       const { data: n, error: u } = await t.schema("hf").from("task_comments").update({ comment: s }).eq("id", e).select().single();
       if (u) throw u;
@@ -149,7 +149,7 @@ function S() {
 }
 function M() {
   const t = o();
-  return m({
+  return y({
     queryKey: ["users"],
     queryFn: async () => {
       const { data: a, error: e } = await t.from("users_view").select("id, email, name").order("email");

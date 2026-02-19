@@ -1,4 +1,4 @@
-import { useQueryClient as w, useQuery as p } from "@tanstack/vue-query";
+import { useQuery as p, useQueryClient as w } from "@tanstack/vue-query";
 import { fetchUserAccessibleAccounts as v, useSupabase as g } from "./index.js";
 import { isRef as A, computed as f } from "vue";
 async function C(e) {

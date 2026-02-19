@@ -1,4 +1,5 @@
 import { Position } from './core';
+
 export declare const relativeCapitalDeployedQueryKeys: {
     top20: (userId: string | null) => readonly ["relativeCapitalDeployed", "top20", string | null];
 };

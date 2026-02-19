@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Position } from './core';
+
 export interface PutPosition extends Position {
 }
 /**

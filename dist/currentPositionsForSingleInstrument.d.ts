@@ -1,4 +1,5 @@
 import { Position } from './core';
+
 export declare const currentPositionQueryKeys: {
     details: (userId: string | null, symbolName: string) => readonly ["currentPosition", string | null, string];
 };

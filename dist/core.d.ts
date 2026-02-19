@@ -1,5 +1,6 @@
 import { Plugin } from 'vue';
 import { SupabaseClient } from '@supabase/supabase-js';
+
 export declare const SUPABASE: unique symbol;
 export interface CoreOptions {
     supabaseUrl: string;
@@ -57,6 +58,7 @@ export interface Position {
     maintenance_margin_change?: string | null;
     contract_quantity?: number | null;
     accounting_quantity?: number | null;
+    delta?: number | null;
 }
 export interface Trade {
     id: string;
