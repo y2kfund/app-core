@@ -1,5 +1,5 @@
 import { inject as X } from "vue";
-import { useQuery as m, useQueryClient as V, QueryClient as Y, VueQueryPlugin as I } from "@tanstack/vue-query";
+import { useQuery as y, useQueryClient as V, QueryClient as Y, VueQueryPlugin as I } from "@tanstack/vue-query";
 import { createClient as ee } from "@supabase/supabase-js";
 const Z = Symbol.for("y2kfund.supabase"), Q = {
   positions: (e, n) => ["positions", e, n],
@@ -13,7 +13,7 @@ const Z = Symbol.for("y2kfund.supabase"), Q = {
   thesisConnections: () => ["thesisConnections"],
   userAccountAccess: (e) => ["userAccountAccess", e]
 };
-function g() {
+function w() {
   const e = X(Z, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
@@ -40,8 +40,8 @@ function te(e) {
   return (n == null ? void 0 : n[1]) || null;
 }
 function ce() {
-  const e = g(), n = Q.thesis();
-  return m({
+  const e = w(), n = Q.thesis();
+  return y({
     queryKey: n,
     queryFn: async () => {
       const { data: o, error: t } = await e.schema("hf").from("thesisMaster").select("*").order("title");
@@ -54,8 +54,8 @@ function ce() {
   });
 }
 function le() {
-  const e = g(), n = Q.thesisConnections();
-  return m({
+  const e = w(), n = Q.thesisConnections();
+  return y({
     queryKey: n,
     queryFn: async () => {
       const { data: o, error: t } = await e.schema("hf").from("positionsAndThesisConnection").select("*").order("symbol_root");
@@ -111,8 +111,8 @@ async function pe(e, n, r, o) {
   }
 }
 function de(e) {
-  const n = g();
-  return m({
+  const n = w();
+  return y({
     queryKey: ["positionPositionMappings", e],
     queryFn: async () => e ? await ne(n, e) : /* @__PURE__ */ new Map(),
     enabled: !!e,
@@ -160,9 +160,9 @@ async function fe(e, n, r, o) {
     throw console.error("❌ Exception saving position trade mappings:", t), t;
   }
 }
-function _e(e) {
-  const n = g();
-  return m({
+function he(e) {
+  const n = w();
+  return y({
     queryKey: ["positionTradeMappings", e],
     queryFn: async () => e ? await oe(n, e) : /* @__PURE__ */ new Map(),
     enabled: !!e,
@@ -170,13 +170,13 @@ function _e(e) {
     // 1 minute
   });
 }
-function he(e) {
+function _e(e) {
   const n = e.contract_quantity ?? e.qty;
   return `${e.internal_account_id}|${e.symbol}|${n}|${e.asset_class}|${e.conid}`;
 }
 function me(e) {
-  const n = g();
-  return m({
+  const n = w();
+  return y({
     queryKey: ["symbolComments", e],
     queryFn: async () => {
       const { data: r, error: o } = await n.schema("hf").from("positions_symbol_comments").select("*").eq("user_id", e);
@@ -236,8 +236,8 @@ async function ye(e, n, r, o) {
   }
 }
 function we(e) {
-  const n = g();
-  return m({
+  const n = w();
+  return y({
     queryKey: ["positionOrderMappings", e],
     queryFn: async () => e ? await re(n, e) : /* @__PURE__ */ new Map(),
     enabled: !!e,
@@ -245,107 +245,116 @@ function we(e) {
   });
 }
 function qe(e, n, r) {
-  const o = g(), t = V(), i = () => r && typeof r == "object" && "value" in r ? r.value : r, a = [...Q.positions(e, n), i()], u = m({
+  const o = w(), t = V(), i = () => r && typeof r == "object" && "value" in r ? r.value : r, a = [...Q.positions(e, n), i()], u = y({
     queryKey: a,
     queryFn: async () => {
       var U, N, j, B;
-      const h = i(), d = await G(o, n);
-      console.log("🔍 Querying positions with asOf:", h);
-      let y = d;
-      if (y.length === 0) {
-        const { data: s, error: l } = await o.schema("hf").from("positions").select("internal_account_id").neq("internal_account_id", null).then((F) => {
-          var k;
-          return { data: ((k = F.data) == null ? void 0 : k.map((P) => P.internal_account_id)) ?? [], error: F.error };
+      const m = i(), f = await G(o, n);
+      console.log("🔍 Querying positions with asOf:", m);
+      let p = f;
+      if (p.length === 0) {
+        const { data: s, error: c } = await o.schema("hf").from("positions").select("internal_account_id").neq("internal_account_id", null).then((b) => {
+          var g;
+          return { data: ((g = b.data) == null ? void 0 : g.map((P) => P.internal_account_id)) ?? [], error: b.error };
         });
-        if (l)
-          return console.error("❌ Error fetching all account IDs:", l), [];
-        y = Array.from(new Set(s));
+        if (c)
+          return console.error("❌ Error fetching all account IDs:", c), [];
+        p = Array.from(new Set(s));
       }
-      let E;
-      if (h) {
-        const { data: s, error: l } = await o.schema("hf").rpc("get_latest_fetched_at_per_account", {
-          account_ids: y,
-          as_of_date: h
+      if (p.length > 0) {
+        const { data: s, error: c } = await o.schema("hf").from("user_accounts_master").select("internal_account_id").in("internal_account_id", p).eq("archived", !1);
+        if (c)
+          console.error("❌ Error filtering archived accounts:", c);
+        else if (s) {
+          const b = p.length;
+          p = s.map((g) => g.internal_account_id), b !== p.length && console.log(`🗃️ Filtered out ${b - p.length} archived account(s)`);
+        }
+      }
+      let T;
+      if (m) {
+        const { data: s, error: c } = await o.schema("hf").rpc("get_latest_fetched_at_per_account", {
+          account_ids: p,
+          as_of_date: m
         });
-        if (l)
-          throw console.error("❌ Error fetching as-of fetched_at:", l), l;
-        E = s || [];
+        if (c)
+          throw console.error("❌ Error fetching as-of fetched_at:", c), c;
+        T = s || [];
       } else {
-        const { data: s, error: l } = await o.schema("hf").from("positions").select("internal_account_id, fetched_at").in("internal_account_id", y).order("fetched_at", { ascending: !1 });
-        if (l)
-          throw console.error("❌ Error fetching latest fetched_at per account:", l), l;
-        E = s || [];
+        const { data: s, error: c } = await o.schema("hf").from("positions").select("internal_account_id, fetched_at").in("internal_account_id", p).order("fetched_at", { ascending: !1 });
+        if (c)
+          throw console.error("❌ Error fetching latest fetched_at per account:", c), c;
+        T = s || [];
       }
-      const q = /* @__PURE__ */ new Map();
-      for (const s of E)
-        q.has(s.internal_account_id) || q.set(s.internal_account_id, s.fetched_at);
-      const c = Array.from(q.entries()).map(
-        ([s, l]) => o.schema("hf").from("positions").select("*").eq("internal_account_id", s).eq("fetched_at", l)
-      ), w = await Promise.all(c), v = w.flatMap((s) => s.data || []);
+      const k = /* @__PURE__ */ new Map();
+      for (const s of T)
+        k.has(s.internal_account_id) || k.set(s.internal_account_id, s.fetched_at);
+      const l = Array.from(k.entries()).map(
+        ([s, c]) => o.schema("hf").from("positions").select("*").eq("internal_account_id", s).eq("fetched_at", c)
+      ), q = await Promise.all(l), S = q.flatMap((s) => s.data || []);
       console.log("🔍 Querying positions with config:", {
         accountId: e,
         schema: "hf",
         table: "positions",
         userId: n || "none",
-        accessibleAccountIds: d.length > 0 ? d : "all"
+        accessibleAccountIds: f.length > 0 ? f : "all"
       });
-      const [S, T, C, A, O, H] = await Promise.all([
-        w[0],
+      const [$, v, A, C, O, H] = await Promise.all([
+        q[0],
         o.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
         o.schema("hf").from("thesisMaster").select("id, title, description"),
         o.schema("hf").from("positionsAndThesisConnection").select("*"),
         o.schema("hf").rpc("get_latest_market_prices"),
         n ? o.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", n) : { data: [], error: null }
       ]);
-      if (S.error)
-        throw console.error("❌ Positions query error:", S.error), S.error;
-      if (T.error)
-        throw console.error("❌ Accounts query error:", T.error), T.error;
-      if (C.error)
-        throw console.error("❌ Thesis query error:", C.error), C.error;
+      if ($.error)
+        throw console.error("❌ Positions query error:", $.error), $.error;
+      if (v.error)
+        throw console.error("❌ Accounts query error:", v.error), v.error;
       if (A.error)
-        throw console.error("❌ Thesis connections query error:", A.error), A.error;
-      let $ = [];
-      O.error ? console.error("❌ Market price query error:", O.error) : ($ = O.data || [], console.log(`📊 Fetched ${$.length} market price records`)), console.log("✅ Positions query success:", {
-        positionsCount: (U = S.data) == null ? void 0 : U.length,
-        accountsCount: (N = T.data) == null ? void 0 : N.length,
-        thesisCount: (j = C.data) == null ? void 0 : j.length,
-        thesisConnectionsCount: (B = A.data) == null ? void 0 : B.length,
-        marketPricesCount: $.length,
-        filtered: d.length > 0,
-        accessibleAccounts: d.length > 0 ? d : "all"
+        throw console.error("❌ Thesis query error:", A.error), A.error;
+      if (C.error)
+        throw console.error("❌ Thesis connections query error:", C.error), C.error;
+      let F = [];
+      O.error ? console.error("❌ Market price query error:", O.error) : (F = O.data || [], console.log(`📊 Fetched ${F.length} market price records`)), console.log("✅ Positions query success:", {
+        positionsCount: (U = $.data) == null ? void 0 : U.length,
+        accountsCount: (N = v.data) == null ? void 0 : N.length,
+        thesisCount: (j = A.data) == null ? void 0 : j.length,
+        thesisConnectionsCount: (B = C.data) == null ? void 0 : B.length,
+        marketPricesCount: F.length,
+        filtered: f.length > 0,
+        accessibleAccounts: f.length > 0 ? f : "all"
       });
       const x = new Map(
         (H.data || []).map((s) => [s.internal_account_id, s.alias])
       ), J = new Map(
-        (T.data || []).map((s) => [s.internal_account_id, s.legal_entity])
+        (v.data || []).map((s) => [s.internal_account_id, s.legal_entity])
       ), L = new Map(
-        (C.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
+        (A.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
       ), K = /* @__PURE__ */ new Map();
-      (A.data || []).forEach((s) => {
-        const l = L.get(s.thesis_id);
-        l && K.set(s.symbol_root, l);
+      (C.data || []).forEach((s) => {
+        const c = L.get(s.thesis_id);
+        c && K.set(s.symbol_root, c);
       });
-      const b = /* @__PURE__ */ new Map();
-      for (const s of $)
-        b.has(s.conid) || b.set(s.conid, { price: s.market_price, fetchedAt: s.last_fetched_at });
-      console.log(`📊 Processed ${b.size} unique conids with latest prices`);
-      const z = v.map((s) => {
-        const l = te(s.symbol), F = l ? K.get(l) : null;
-        let k = null, P = null, D = null, R = null;
+      const M = /* @__PURE__ */ new Map();
+      for (const s of F)
+        M.has(s.conid) || M.set(s.conid, { price: s.market_price, fetchedAt: s.last_fetched_at });
+      console.log(`📊 Processed ${M.size} unique conids with latest prices`);
+      const z = S.map((s) => {
+        const c = te(s.symbol), b = c ? K.get(c) : null;
+        let g = null, P = null, D = null, R = null;
         if (s.asset_class === "STK" || s.asset_class === "FUND") {
-          const f = b.get(s.conid);
-          k = (f == null ? void 0 : f.price) || null, P = (f == null ? void 0 : f.fetchedAt) || null;
+          const h = M.get(s.conid);
+          g = (h == null ? void 0 : h.price) || null, P = (h == null ? void 0 : h.fetchedAt) || null;
         } else if (s.asset_class === "OPT") {
-          const f = b.get(s.conid), M = b.get(s.undConid);
-          D = (f == null ? void 0 : f.price) || null, R = (M == null ? void 0 : M.price) || null, k = R, P = (M == null ? void 0 : M.fetchedAt) || null;
+          const h = M.get(s.conid), E = M.get(s.undConid);
+          D = (h == null ? void 0 : h.price) || null, R = (E == null ? void 0 : E.price) || null, g = R, P = (E == null ? void 0 : E.fetchedAt) || null;
         }
         let W = J.get(s.internal_account_id) || void 0;
         return x.has(s.internal_account_id) && (W = x.get(s.internal_account_id)), {
           ...s,
           legal_entity: W,
-          thesis: F,
-          market_price: k,
+          thesis: b,
+          market_price: g,
           market_price_fetched_at: P,
           option_market_price: D,
           underlying_market_price: R
@@ -354,7 +363,7 @@ function qe(e, n, r) {
       return console.log("✅ Enriched positions with accounts and thesis", z), z;
     },
     staleTime: 6e4
-  }), p = o.channel(`positions:${e}`).on(
+  }), d = o.channel(`positions:${e}`).on(
     "postgres_changes",
     {
       schema: "hf",
@@ -374,8 +383,8 @@ function qe(e, n, r) {
   return {
     ...u,
     _cleanup: () => {
-      var h, d;
-      (h = p == null ? void 0 : p.unsubscribe) == null || h.call(p), (d = _ == null ? void 0 : _.unsubscribe) == null || d.call(_);
+      var m, f;
+      (m = d == null ? void 0 : d.unsubscribe) == null || m.call(d), (f = _ == null ? void 0 : _.unsubscribe) == null || f.call(_);
     }
   };
 }
@@ -389,27 +398,27 @@ async function be(e, n, r, o) {
     if (u)
       throw console.error("❌ Error fetching positions by symbol root:", u), u;
     console.log("📊 Fetched positions count:", (a == null ? void 0 : a.length) || 0);
-    const p = /* @__PURE__ */ new Map(), _ = (a || []).filter((c) => {
-      const w = c.contract_quantity ?? c.qty, v = `${c.internal_account_id}|${c.symbol}|${w}|${c.asset_class}|${c.conid}`;
-      return p.has(v) ? !1 : (p.set(v, c), !0);
+    const d = /* @__PURE__ */ new Map(), _ = (a || []).filter((l) => {
+      const q = l.contract_quantity ?? l.qty, S = `${l.internal_account_id}|${l.symbol}|${q}|${l.asset_class}|${l.conid}`;
+      return d.has(S) ? !1 : (d.set(S, l), !0);
     });
     console.log(
       "📊 Deduplicated positions count:",
       _.length,
       `(removed ${((a == null ? void 0 : a.length) || 0) - _.length} duplicates)`
     );
-    const [h, d] = await Promise.all([
+    const [m, f] = await Promise.all([
       e.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
       r ? e.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", r) : { data: [], error: null }
-    ]), y = new Map(
-      (d.data || []).map((c) => [c.internal_account_id, c.alias])
-    ), E = new Map(
-      (h.data || []).map((c) => [c.internal_account_id, c.legal_entity])
-    ), q = _.map((c) => {
-      let w = E.get(c.internal_account_id) || void 0;
-      return y.has(c.internal_account_id) && (w = y.get(c.internal_account_id)), {
-        ...c,
-        legal_entity: w,
+    ]), p = new Map(
+      (f.data || []).map((l) => [l.internal_account_id, l.alias])
+    ), T = new Map(
+      (m.data || []).map((l) => [l.internal_account_id, l.legal_entity])
+    ), k = _.map((l) => {
+      let q = T.get(l.internal_account_id) || void 0;
+      return p.has(l.internal_account_id) && (q = p.get(l.internal_account_id)), {
+        ...l,
+        legal_entity: q,
         thesis: null,
         market_price: null,
         market_price_fetched_at: null,
@@ -421,15 +430,15 @@ async function be(e, n, r, o) {
       symbolRoot: n,
       account: o,
       total: (a == null ? void 0 : a.length) || 0,
-      unique: q.length,
+      unique: k.length,
       filtered: t.length > 0
-    }), q;
+    }), k;
   } catch (t) {
     return console.error("❌ Exception fetching positions by symbol root:", t), [];
   }
 }
 function ke(e) {
-  const n = g(), r = Q.trades(e), o = V(), t = m({
+  const n = w(), r = Q.trades(e), o = V(), t = y({
     queryKey: r,
     queryFn: async () => {
       const { data: a, error: u } = await n.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
@@ -472,8 +481,8 @@ async function Me(e) {
     }
   });
   return {
-    install(p) {
-      p.provide(Z, i), p.use(I, { queryClient: a });
+    install(d) {
+      d.provide(Z, i), d.use(I, { queryClient: a });
     }
   };
 }
@@ -486,7 +495,7 @@ export {
   oe as fetchPositionTradeMappings,
   be as fetchPositionsBySymbolRoot,
   G as fetchUserAccessibleAccounts,
-  he as generateCommentKey,
+  _e as generateCommentKey,
   ue as generatePositionMappingKey,
   Q as queryKeys,
   ye as savePositionOrderMappings,
@@ -495,9 +504,9 @@ export {
   ge as upsertSymbolComment,
   we as usePositionOrderMappingsQuery,
   de as usePositionPositionMappingsQuery,
-  _e as usePositionTradeMappingsQuery,
+  he as usePositionTradeMappingsQuery,
   qe as usePositionsQuery,
-  g as useSupabase,
+  w as useSupabase,
   me as useSymbolCommentsQuery,
   le as useThesisConnectionsQuery,
   ce as useThesisQuery,

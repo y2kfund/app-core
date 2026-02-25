@@ -680,6 +680,25 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
         accountIds = Array.from(new Set(allAccounts))
       }
 
+      // Filter out archived accounts
+      if (accountIds.length > 0) {
+        const { data: activeAccounts, error: archivedError } = await supabase
+          .schema('hf')
+          .from('user_accounts_master')
+          .select('internal_account_id')
+          .in('internal_account_id', accountIds)
+          .eq('archived', false)
+        if (archivedError) {
+          console.error('❌ Error filtering archived accounts:', archivedError)
+        } else if (activeAccounts) {
+          const before = accountIds.length
+          accountIds = activeAccounts.map((r: any) => r.internal_account_id)
+          if (before !== accountIds.length) {
+            console.log(`🗃️ Filtered out ${before - accountIds.length} archived account(s)`)
+          }
+        }
+      }
+
       // Step 2: For each account, get its latest fetched_at (or as of date)
       let fetchedAtRows
       if (asOf) {
