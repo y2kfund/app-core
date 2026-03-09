@@ -838,7 +838,7 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
         ; (thesisConnectionsRes.data || []).forEach((conn: any) => {
           const thesis = thesisMap.get(conn.thesis_id)
           if (thesis) {
-            symbolRootThesisMap.set(conn.symbol_root, thesis)
+            symbolRootThesisMap.set(extractSymbolRoot(conn.symbol_root) || conn.symbol_root, thesis)
           }
         })
 

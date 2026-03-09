@@ -1,7 +1,7 @@
-import { inject as X } from "vue";
-import { useQuery as y, useQueryClient as V, QueryClient as Y, VueQueryPlugin as I } from "@tanstack/vue-query";
-import { createClient as ee } from "@supabase/supabase-js";
-const Z = Symbol.for("y2kfund.supabase"), Q = {
+import { inject as Y } from "vue";
+import { useQuery as y, useQueryClient as Z, QueryClient as I, VueQueryPlugin as ee } from "@tanstack/vue-query";
+import { createClient as te } from "@supabase/supabase-js";
+const G = Symbol.for("y2kfund.supabase"), Q = {
   positions: (e, n) => ["positions", e, n],
   trades: (e) => ["trades", e],
   orders: (e) => ["orders", e],
@@ -14,11 +14,11 @@ const Z = Symbol.for("y2kfund.supabase"), Q = {
   userAccountAccess: (e) => ["userAccountAccess", e]
 };
 function w() {
-  const e = X(Z, null);
+  const e = Y(G, null);
   if (!e) throw new Error("[@y2kfund/core] Supabase client not found. Did you install createCore()?");
   return e;
 }
-async function G(e, n) {
+async function H(e, n) {
   if (!n)
     return console.log("⚠️ No userId provided, showing all positions"), [];
   try {
@@ -34,7 +34,7 @@ async function G(e, n) {
     return console.error("❌ Exception fetching account access:", r), [];
   }
 }
-function te(e) {
+function V(e) {
   if (!e) return null;
   const n = e.match(/^([A-Z]+)\b/);
   return (n == null ? void 0 : n[1]) || null;
@@ -160,7 +160,7 @@ async function fe(e, n, r, o) {
     throw console.error("❌ Exception saving position trade mappings:", t), t;
   }
 }
-function he(e) {
+function _e(e) {
   const n = w();
   return y({
     queryKey: ["positionTradeMappings", e],
@@ -170,7 +170,7 @@ function he(e) {
     // 1 minute
   });
 }
-function _e(e) {
+function he(e) {
   const n = e.contract_quantity ?? e.qty;
   return `${e.internal_account_id}|${e.symbol}|${n}|${e.asset_class}|${e.conid}`;
 }
@@ -245,11 +245,11 @@ function we(e) {
   });
 }
 function qe(e, n, r) {
-  const o = w(), t = V(), i = () => r && typeof r == "object" && "value" in r ? r.value : r, a = [...Q.positions(e, n), i()], u = y({
+  const o = w(), t = Z(), i = () => r && typeof r == "object" && "value" in r ? r.value : r, a = [...Q.positions(e, n), i()], u = y({
     queryKey: a,
     queryFn: async () => {
       var U, N, j, B;
-      const m = i(), f = await G(o, n);
+      const m = i(), f = await H(o, n);
       console.log("🔍 Querying positions with asOf:", m);
       let p = f;
       if (p.length === 0) {
@@ -298,7 +298,7 @@ function qe(e, n, r) {
         userId: n || "none",
         accessibleAccountIds: f.length > 0 ? f : "all"
       });
-      const [$, v, A, C, O, H] = await Promise.all([
+      const [$, v, A, C, O, J] = await Promise.all([
         q[0],
         o.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
         o.schema("hf").from("thesisMaster").select("id, title, description"),
@@ -325,31 +325,31 @@ function qe(e, n, r) {
         accessibleAccounts: f.length > 0 ? f : "all"
       });
       const x = new Map(
-        (H.data || []).map((s) => [s.internal_account_id, s.alias])
-      ), J = new Map(
-        (v.data || []).map((s) => [s.internal_account_id, s.legal_entity])
+        (J.data || []).map((s) => [s.internal_account_id, s.alias])
       ), L = new Map(
+        (v.data || []).map((s) => [s.internal_account_id, s.legal_entity])
+      ), X = new Map(
         (A.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
       ), K = /* @__PURE__ */ new Map();
       (C.data || []).forEach((s) => {
-        const c = L.get(s.thesis_id);
-        c && K.set(s.symbol_root, c);
+        const c = X.get(s.thesis_id);
+        c && K.set(V(s.symbol_root) || s.symbol_root, c);
       });
       const M = /* @__PURE__ */ new Map();
       for (const s of F)
         M.has(s.conid) || M.set(s.conid, { price: s.market_price, fetchedAt: s.last_fetched_at });
       console.log(`📊 Processed ${M.size} unique conids with latest prices`);
       const z = S.map((s) => {
-        const c = te(s.symbol), b = c ? K.get(c) : null;
+        const c = V(s.symbol), b = c ? K.get(c) : null;
         let g = null, P = null, D = null, R = null;
         if (s.asset_class === "STK" || s.asset_class === "FUND") {
-          const h = M.get(s.conid);
-          g = (h == null ? void 0 : h.price) || null, P = (h == null ? void 0 : h.fetchedAt) || null;
+          const _ = M.get(s.conid);
+          g = (_ == null ? void 0 : _.price) || null, P = (_ == null ? void 0 : _.fetchedAt) || null;
         } else if (s.asset_class === "OPT") {
-          const h = M.get(s.conid), E = M.get(s.undConid);
-          D = (h == null ? void 0 : h.price) || null, R = (E == null ? void 0 : E.price) || null, g = R, P = (E == null ? void 0 : E.fetchedAt) || null;
+          const _ = M.get(s.conid), E = M.get(s.undConid);
+          D = (_ == null ? void 0 : _.price) || null, R = (E == null ? void 0 : E.price) || null, g = R, P = (E == null ? void 0 : E.fetchedAt) || null;
         }
-        let W = J.get(s.internal_account_id) || void 0;
+        let W = L.get(s.internal_account_id) || void 0;
         return x.has(s.internal_account_id) && (W = x.get(s.internal_account_id)), {
           ...s,
           legal_entity: W,
@@ -371,7 +371,7 @@ function qe(e, n, r) {
       event: "*"
     },
     () => t.invalidateQueries({ queryKey: a })
-  ).subscribe(), _ = o.channel("thesis-connections").on(
+  ).subscribe(), h = o.channel("thesis-connections").on(
     "postgres_changes",
     {
       schema: "hf",
@@ -384,28 +384,28 @@ function qe(e, n, r) {
     ...u,
     _cleanup: () => {
       var m, f;
-      (m = d == null ? void 0 : d.unsubscribe) == null || m.call(d), (f = _ == null ? void 0 : _.unsubscribe) == null || f.call(_);
+      (m = d == null ? void 0 : d.unsubscribe) == null || m.call(d), (f = h == null ? void 0 : h.unsubscribe) == null || f.call(h);
     }
   };
 }
 async function be(e, n, r, o) {
   try {
     console.log("🔍 Fetching positions for symbol root:", n, "account:", o);
-    const t = await G(e, r);
+    const t = await H(e, r);
     let i = e.schema("hf").from("positions").select("*").ilike("symbol", `${n}%`);
     o && (i = i.eq("internal_account_id", o)), t.length > 0 && (i = i.in("internal_account_id", t)), i = i.order("fetched_at", { ascending: !1 });
     const { data: a, error: u } = await i;
     if (u)
       throw console.error("❌ Error fetching positions by symbol root:", u), u;
     console.log("📊 Fetched positions count:", (a == null ? void 0 : a.length) || 0);
-    const d = /* @__PURE__ */ new Map(), _ = (a || []).filter((l) => {
+    const d = /* @__PURE__ */ new Map(), h = (a || []).filter((l) => {
       const q = l.contract_quantity ?? l.qty, S = `${l.internal_account_id}|${l.symbol}|${q}|${l.asset_class}|${l.conid}`;
       return d.has(S) ? !1 : (d.set(S, l), !0);
     });
     console.log(
       "📊 Deduplicated positions count:",
-      _.length,
-      `(removed ${((a == null ? void 0 : a.length) || 0) - _.length} duplicates)`
+      h.length,
+      `(removed ${((a == null ? void 0 : a.length) || 0) - h.length} duplicates)`
     );
     const [m, f] = await Promise.all([
       e.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
@@ -414,7 +414,7 @@ async function be(e, n, r, o) {
       (f.data || []).map((l) => [l.internal_account_id, l.alias])
     ), T = new Map(
       (m.data || []).map((l) => [l.internal_account_id, l.legal_entity])
-    ), k = _.map((l) => {
+    ), k = h.map((l) => {
       let q = T.get(l.internal_account_id) || void 0;
       return p.has(l.internal_account_id) && (q = p.get(l.internal_account_id)), {
         ...l,
@@ -438,7 +438,7 @@ async function be(e, n, r, o) {
   }
 }
 function ke(e) {
-  const n = w(), r = Q.trades(e), o = V(), t = y({
+  const n = w(), r = Q.trades(e), o = Z(), t = y({
     queryKey: r,
     queryFn: async () => {
       const { data: a, error: u } = await n.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
@@ -470,7 +470,7 @@ async function Me(e) {
     supabaseAnon: r,
     supabaseClient: o,
     query: t
-  } = e, i = o ?? ee(n, r), a = new Y({
+  } = e, i = o ?? te(n, r), a = new I({
     defaultOptions: {
       queries: {
         staleTime: (t == null ? void 0 : t.staleTime) ?? 6e4,
@@ -482,20 +482,20 @@ async function Me(e) {
   });
   return {
     install(d) {
-      d.provide(Z, i), d.use(I, { queryClient: a });
+      d.provide(G, i), d.use(ee, { queryClient: a });
     }
   };
 }
 export {
-  Z as SUPABASE,
+  G as SUPABASE,
   Me as createCore,
-  te as extractSymbolRoot,
+  V as extractSymbolRoot,
   re as fetchPositionOrderMappings,
   ne as fetchPositionPositionMappings,
   oe as fetchPositionTradeMappings,
   be as fetchPositionsBySymbolRoot,
-  G as fetchUserAccessibleAccounts,
-  _e as generateCommentKey,
+  H as fetchUserAccessibleAccounts,
+  he as generateCommentKey,
   ue as generatePositionMappingKey,
   Q as queryKeys,
   ye as savePositionOrderMappings,
@@ -504,7 +504,7 @@ export {
   ge as upsertSymbolComment,
   we as usePositionOrderMappingsQuery,
   de as usePositionPositionMappingsQuery,
-  he as usePositionTradeMappingsQuery,
+  _e as usePositionTradeMappingsQuery,
   qe as usePositionsQuery,
   w as useSupabase,
   me as useSymbolCommentsQuery,
