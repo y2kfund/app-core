@@ -52,8 +52,8 @@ export function useCurrentPositionQuery(
 
       // Step 2: Get the latest fetched_at timestamp from positions table
       const { data: maxFetchedAtRes, error: maxFetchedAtError } = await supabase
-        .schema('hf')
-        .from('positions')
+        .schema('fund_ai')
+        .from('p_positions_positions')
         .select('fetched_at')
         .order('fetched_at', { ascending: false })
         .limit(1)
@@ -74,8 +74,8 @@ export function useCurrentPositionQuery(
 
       // Step 3: Build the main query with all filters
       let query = supabase
-        .schema('hf')
-        .from('positions')
+        .schema('fund_ai')
+        .from('p_positions_positions')
         .select('*')
         .eq('fetched_at', latestFetchedAt)
         .eq('asset_class', 'STK')
@@ -108,14 +108,14 @@ export function useCurrentPositionQuery(
 
       const [accountsRes, aliasRes] = await Promise.all([
         supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity')
           .in('internal_account_id', uniqueAccountIds),
         userId
           ? supabase
-              .schema('hf')
-              .from('user_account_alias')
+              .schema('fund_ai')
+              .from('core_accounts_alias')
               .select('internal_account_id, alias')
               .eq('user_id', userId)
               .in('internal_account_id', uniqueAccountIds)
@@ -167,8 +167,8 @@ export function useCurrentPositionQuery(
     .channel(`instrument-details:${symbolName}`)
     .on('postgres_changes',
       { 
-        schema: 'hf', 
-        table: 'positions', 
+        schema: 'fund_ai',
+        table: 'p_positions_positions',
         event: '*' 
       },
       () => {

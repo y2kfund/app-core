@@ -6,7 +6,7 @@ export interface Order {
   id: string
   accountId: string
   internal_account_id: string
-  legal_entity?: string  // Legal entity name from user_accounts_master
+  legal_entity?: string  // Legal entity name from core_accounts_master
   symbol: string
   assetCategory: string
   quantity: string  // Note: quantity is text in DB
@@ -51,8 +51,8 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
 
       // Step 2: Build orders query (fetch all orders, no fetched_at filter)
       let ordersQuery = supabase
-        .schema('hf')
-        .from('orders')
+        .schema('fund_ai')
+        .from('p_trades_orders')
         .select(`*`)
 
       // Apply access filter if user has specific account access
@@ -78,8 +78,8 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
           console.log('🔍 Fetching attached orders with pattern:', pattern)
           
           const { data: mappings, error: mappingsError } = await supabase
-            .schema('hf')
-            .from('position_order_mappings')
+            .schema('fund_ai')
+            .from('p_positions_order_mappings')
             .select('order_id')
             .eq('user_id', userId)
             .like('mapping_key', pattern)
@@ -104,13 +104,13 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
       const [ordersRes, acctRes, aliasRes] = await Promise.all([
         ordersQuery,
         supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity'),
         userId
           ? supabase
-              .schema('hf')
-              .from('user_account_alias')
+              .schema('fund_ai')
+              .from('core_accounts_alias')
               .select('internal_account_id, alias')
               .eq('user_id', userId)
           : { data: [], error: null }
@@ -172,8 +172,8 @@ export function useOrderQuery(accountId: string, userId?: string | null, symbolR
     .channel(`orders:${accountId}`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'orders',
+        schema: 'fund_ai',
+        table: 'p_trades_orders',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })

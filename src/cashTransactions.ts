@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useSupabase, fetchUserAccessibleAccounts, queryKeys } from './core'
 
-// Data types - matching the actual database schema for hf.cash_transaction
+// Data types - matching the actual database schema for fund_ai.p_trades_cash_transactions
 export interface CashTransaction {
   id: number
   internal_account_id?: string
@@ -51,7 +51,7 @@ export interface CashTransaction {
   commodityType?: string
   fineness?: number
   weight?: number
-  legal_entity?: string  // Enriched from user_accounts_master
+  legal_entity?: string  // Enriched from core_accounts_master
 }
 
 // Cash Transactions query hook
@@ -68,16 +68,16 @@ export function useCashTransactionsQuery(accountId: string, userId?: string | nu
 
       console.log('🔍 Querying cash transactions with config:', {
         accountId,
-        schema: 'hf',
-        table: 'cash_transaction',
+        schema: 'fund_ai',
+        table: 'p_trades_cash_transactions',
         userId: userId || 'none',
         accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
       // Step 2: Get the latest fetched_at timestamp
       const maxFetchedAtRes = await supabase
-        .schema('hf')
-        .from('cash_transaction')
+        .schema('fund_ai')
+        .from('p_trades_cash_transactions')
         .select('fetched_at')
         .order('fetched_at', { ascending: false })
         .limit(1)
@@ -98,8 +98,8 @@ export function useCashTransactionsQuery(accountId: string, userId?: string | nu
 
       // Step 3: Build cash transactions query with optional access filter
       let cashTransactionsQuery = supabase
-        .schema('hf')
-        .from('cash_transaction')
+        .schema('fund_ai')
+        .from('p_trades_cash_transactions')
         .select(`
           id,
           internal_account_id,
@@ -166,13 +166,13 @@ export function useCashTransactionsQuery(accountId: string, userId?: string | nu
       const [cashTransactionsRes, acctRes, aliasRes] = await Promise.all([
         cashTransactionsQuery,
         supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity'),
         userId
           ? supabase
-              .schema('hf')
-              .from('user_account_alias')
+              .schema('fund_ai')
+              .from('core_accounts_alias')
               .select('internal_account_id, alias')
               .eq('user_id', userId)
           : { data: [], error: null }
@@ -227,11 +227,11 @@ export function useCashTransactionsQuery(accountId: string, userId?: string | nu
 
   // Set up Supabase Realtime subscription for cash transactions
   const cashTransactionsChannel = supabase
-    .channel(`cash_transaction:${accountId}`)
+    .channel(`p_trades_cash_transactions:${accountId}`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'cash_transaction',
+        schema: 'fund_ai',
+        table: 'p_trades_cash_transactions',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })

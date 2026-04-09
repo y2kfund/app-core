@@ -1,29 +1,29 @@
 import { useQueryClient as A, useQuery as k } from "@tanstack/vue-query";
 import { useSupabase as F, queryKeys as Q, fetchUserAccessibleAccounts as S } from "./index.js";
-function v(g, n, s) {
-  const a = F(), _ = Q.orders(g), y = A(), w = k({
-    queryKey: _,
+function v(p, n, a) {
+  const s = F(), g = Q.orders(p), y = A(), w = k({
+    queryKey: g,
     queryFn: async () => {
       var f, m;
-      const r = await S(a, n);
-      let t = a.schema("hf").from("orders").select("*");
-      r.length > 0 ? (console.log("🔒 Applying access filter for accounts:", r), t = t.in("internal_account_id", r)) : console.log("🔓 No access filter applied - showing all orders"), s && s.trim() !== "" && (console.log("🔍 Filtering orders for symbol root:", s), t = t.ilike("symbol", `${s}%`)), t = t.order('"tradeDate"', { ascending: !1 });
+      const r = await S(s, n);
+      let t = s.schema("fund_ai").from("p_trades_orders").select("*");
+      r.length > 0 ? (console.log("🔒 Applying access filter for accounts:", r), t = t.in("internal_account_id", r)) : console.log("🔓 No access filter applied - showing all orders"), a && a.trim() !== "" && (console.log("🔍 Filtering orders for symbol root:", a), t = t.ilike("symbol", `${a}%`)), t = t.order('"tradeDate"', { ascending: !1 });
       let d = /* @__PURE__ */ new Set();
-      if (n && s)
+      if (n && a)
         try {
-          const e = `%|${s}|%|STK|%`;
+          const e = `%|${a}|%|STK|%`;
           console.log("🔍 Fetching attached orders with pattern:", e);
-          const { data: o, error: u } = await a.schema("hf").from("position_order_mappings").select("order_id").eq("user_id", n).like("mapping_key", e);
-          console.log("🔍 Fetched position-order mappings:", o), u ? console.error("⚠️ Error fetching position-order mappings:", u) : o && o.length > 0 && (o.forEach((h) => {
-            h.order_id && d.add(String(h.order_id));
+          const { data: o, error: u } = await s.schema("fund_ai").from("p_positions_order_mappings").select("order_id").eq("user_id", n).like("mapping_key", e);
+          console.log("🔍 Fetched position-order mappings:", o), u ? console.error("⚠️ Error fetching position-order mappings:", u) : o && o.length > 0 && (o.forEach((_) => {
+            _.order_id && d.add(String(_.order_id));
           }), console.log(`✅ Found ${d.size} attached orders`));
         } catch (e) {
           console.error("⚠️ Error checking attached orders:", e);
         }
       const [i, l, q] = await Promise.all([
         t,
-        a.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        n ? a.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", n) : { data: [], error: null }
+        s.schema("fund_ai").from("core_accounts_master").select("internal_account_id, legal_entity"),
+        n ? s.schema("fund_ai").from("core_accounts_alias").select("internal_account_id, alias").eq("user_id", n) : { data: [], error: null }
       ]);
       if (i.error)
         throw console.error("❌ Orders query error:", i.error), i.error;
@@ -38,29 +38,29 @@ function v(g, n, s) {
       });
       const b = new Map(
         (l.data || []).map((e) => [e.internal_account_id, e.legal_entity])
-      ), p = new Map(
+      ), h = new Map(
         (q.data || []).map((e) => [e.internal_account_id, e.alias])
       );
       return (i.data || []).map((e) => {
         let o = b.get(e.internal_account_id) || void 0;
-        p.has(e.internal_account_id) && (o = p.get(e.internal_account_id));
-        const u = String(e.id), h = d.has(u);
+        h.has(e.internal_account_id) && (o = h.get(e.internal_account_id));
+        const u = String(e.id), _ = d.has(u);
         return {
           ...e,
           legal_entity: o,
-          isAttached: h
+          isAttached: _
         };
       });
     },
     staleTime: 6e4
-  }), c = a.channel(`orders:${g}`).on(
+  }), c = s.channel(`orders:${p}`).on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "orders",
+      schema: "fund_ai",
+      table: "p_trades_orders",
       event: "*"
     },
-    () => y.invalidateQueries({ queryKey: _ })
+    () => y.invalidateQueries({ queryKey: g })
   ).subscribe();
   return {
     ...w,

@@ -15,8 +15,8 @@ export async function fetchAvailableFetchedAtTimestamps(
   supabase: SupabaseClient
 ): Promise<string[]> {
   const { data, error } = await supabase
-    .schema('hf')
-    .from('positions')
+    .schema('fund_ai')
+    .from('p_positions_positions')
     .select('fetched_at')
     .order('fetched_at', { ascending: false })
 
@@ -54,8 +54,8 @@ export async function fetchCallPositionsForSymbol(
   
   if (!targetFetchedAt) {
     const { data: latestFetchedAtData, error: fetchedAtError } = await supabase
-      .schema('hf')
-      .from('positions')
+      .schema('fund_ai')
+      .from('p_positions_positions')
       .select('fetched_at')
       .order('fetched_at', { ascending: false })
       .limit(1)
@@ -73,8 +73,8 @@ export async function fetchCallPositionsForSymbol(
 
   // Step 3: Fetch call positions with specified fetched_at and symbol filter
   let query = supabase
-    .schema('hf')
-    .from('positions')
+    .schema('fund_ai')
+    .from('p_positions_positions')
     .select('*')
     .eq('fetched_at', targetFetchedAt)
     .ilike('symbol', `%${symbolRoot}% C %`) // Contains capital 'C' for calls
@@ -94,13 +94,13 @@ export async function fetchCallPositionsForSymbol(
   // Step 4: Fetch accounts and aliases
   const [acctRes, aliasRes] = await Promise.all([
     supabase
-      .schema('hf')
-      .from('user_accounts_master')
+      .schema('fund_ai')
+      .from('core_accounts_master')
       .select('internal_account_id, legal_entity'),
     userId
       ? supabase
-          .schema('hf')
-          .from('user_account_alias')
+          .schema('fund_ai')
+          .from('core_accounts_alias')
           .select('internal_account_id, alias')
           .eq('user_id', userId)
       : { data: [], error: null }
@@ -185,8 +185,8 @@ export function useCallPositionsQuery(
       'postgres_changes',
       {
         event: '*',
-        schema: 'hf',
-        table: 'positions',
+        schema: 'fund_ai',
+        table: 'p_positions_positions',
         filter: `symbol=ilike.%${symbolRoot}%C%`
       },
       () => {

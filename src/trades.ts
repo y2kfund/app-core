@@ -6,7 +6,7 @@ export interface Trade {
   id: string
   accountId: string
   internal_account_id: string
-  legal_entity?: string  // Legal entity name from user_accounts_master
+  legal_entity?: string  // Legal entity name from core_accounts_master
   symbol: string
   assetCategory: string
   quantity: string  // Note: quantity is text in DB
@@ -52,16 +52,16 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
 
       console.log('Querying trades with config:', {
         accountId,
-        schema: 'hf',
-        table: 'trades',
+        schema: 'fund_ai',
+        table: 'p_trades_trades',
         userId: userId || 'none',
         accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
       // Step 2: Build trades query (fetch all trades, no fetched_at filter)
       let tradesQuery = supabase
-        .schema('hf')
-        .from('trades')
+        .schema('fund_ai')
+        .from('p_trades_trades')
         .select(`
           id,
           "accountId",
@@ -115,13 +115,13 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
       const [tradesRes, acctRes, aliasRes] = await Promise.all([
         tradesQuery,
         supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity'),
         userId
           ? supabase
-              .schema('hf')
-              .from('user_account_alias')
+              .schema('fund_ai')
+              .from('core_accounts_alias')
               .select('internal_account_id, alias')
               .eq('user_id', userId)
           : { data: [], error: null }
@@ -178,8 +178,8 @@ export function useTradeQuery(accountId: string, userId?: string | null, symbolR
     .channel(`trades:${accountId}`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'trades',
+        schema: 'fund_ai',
+        table: 'p_trades_trades',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })

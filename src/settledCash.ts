@@ -55,8 +55,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
         let accountIds: string[] = accessibleAccountIds
         if (accountIds.length === 0) {
           const { data: allAccounts, error: allAccountsError } = await supabase
-            .schema('hf')
-            .from('settledcash')
+            .schema('fund_ai')
+            .from('p_dashboard_settledcash')
             .select('internal_account_id')
             .neq('internal_account_id', null)
           
@@ -71,8 +71,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
         const fetchedAtPromises = accountIds.map(async (accountId) => {
           // Get latest settled cash record up to end of selected day
           const { data, error } = await supabase
-            .schema('hf')
-            .from('settledcash')
+            .schema('fund_ai')
+            .from('p_dashboard_settledcash')
             .select('*')
             .eq('internal_account_id', accountId)
             .lte('fetched_at', endOfDay)
@@ -92,8 +92,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
         result = fetchedResults.filter(r => r !== null) as SettledCash[]
         
         const { data: accountData } = await supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity, archived, sync_mode')
         
         const accountMap = new Map(
@@ -110,8 +110,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
       } else {
         // Get latest settled cash for each account
         const { data: allAccounts, error: allAccountsError } = await supabase
-          .schema('hf')
-          .from('settledcash')
+          .schema('fund_ai')
+          .from('p_dashboard_settledcash')
           .select('internal_account_id')
           .neq('internal_account_id', null)
         
@@ -124,8 +124,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
         
         const latestPromises = accountIds.map(async (accountId) => {
           const { data, error } = await supabase
-            .schema('hf')
-            .from('settledcash')
+            .schema('fund_ai')
+            .from('p_dashboard_settledcash')
             .select('*')
             .eq('internal_account_id', accountId)
             .order('fetched_at', { ascending: false })
@@ -145,8 +145,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
         
         // Add legal entity and account metadata
         const { data: accountData } = await supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity, archived, sync_mode')
         
         const accountMap = new Map(
@@ -165,8 +165,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
       let aliasMap: Map<string, string> = new Map()
       if (userId) {
         const { data: aliasData } = await supabase
-          .schema('hf')
-          .from('user_account_alias')
+          .schema('fund_ai')
+          .from('core_accounts_alias')
           .select('internal_account_id, alias')
           .eq('user_id', userId)
         aliasMap = new Map((aliasData || []).map((a: any) => [a.internal_account_id, a.alias]))
@@ -203,8 +203,8 @@ export function useSettledCashQuery(limit: number, userId?: string | null, asOfD
     .channel(`settledcash_all`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'settledcash',
+        schema: 'fund_ai',
+        table: 'p_dashboard_settledcash',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })

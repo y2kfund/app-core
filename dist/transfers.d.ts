@@ -1,5 +1,5 @@
 export interface Transfer {
-    id: number;
+    id: string;
     internal_account_id?: string;
     fetched_at?: string;
     accountId: string;

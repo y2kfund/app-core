@@ -48,9 +48,9 @@ export interface ThesisCapitalGroup {
  * Workflow:
  * 1. Fetch top 20 positions by capital from useTop20PositionsByCapitalQuery
  * 2. Extract unique symbol roots
- * 3. Query positionsAndThesisConnection to get thesis_id for each symbol
- * 4. Query thesisMaster to get thesis titles and parent_thesis_id
- * 5. Query thesisMaster again to get parent thesis titles
+ * 3. Query p_positions_thesis_connections to get thesis_id for each symbol
+ * 4. Query p_thesis_master to get thesis titles and parent_thesis_id
+ * 5. Query p_thesis_master again to get parent thesis titles
  * 6. Group positions by thesis and sum capital
  * 7. Handle unassigned symbols (no thesis connection)
  * 8. Return sorted array of ThesisCapitalGroup for pie chart
@@ -85,10 +85,10 @@ export function useCapitalAcrossThesisQuery(userId: string | null) {
       const symbolRoots = top20Positions.map((pos: SymbolPositionGroup) => pos.symbolRoot)
       console.log('📋 Symbol roots:', symbolRoots)
 
-      // Step 3: Query positionsAndThesisConnection
+      // Step 3: Query p_positions_thesis_connections
       const { data: thesisConnections, error: connectionsError } = await supabase
-        .schema('hf')
-        .from('positionsAndThesisConnection')
+        .schema('fund_ai')
+        .from('p_positions_thesis_connections')
         .select('*')
         .in('symbol_root', symbolRoots)
 
@@ -122,8 +122,8 @@ export function useCapitalAcrossThesisQuery(userId: string | null) {
       
       if (allThesisIds.length > 0) {
         const { data: thesisData, error: thesisError } = await supabase
-          .schema('hf')
-          .from('thesisMaster')
+          .schema('fund_ai')
+          .from('p_thesis_master')
           .select('*')
           .in('id', allThesisIds)
 
@@ -151,8 +151,8 @@ export function useCapitalAcrossThesisQuery(userId: string | null) {
 
         if (parentThesisIds.length > 0) {
           const { data: parentThesisData, error: parentThesisError } = await supabase
-            .schema('hf')
-            .from('thesisMaster')
+            .schema('fund_ai')
+            .from('p_thesis_master')
             .select('*')
             .in('id', parentThesisIds)
 
@@ -228,7 +228,7 @@ export function useCapitalAcrossThesisQuery(userId: string | null) {
           thesisIds.forEach(thesisId => {
             const thesis = thesisMap.get(thesisId)
             if (!thesis) {
-              console.warn(`⚠️ Thesis ${thesisId} not found in thesisMaster`)
+              console.warn(`⚠️ Thesis ${thesisId} not found in p_thesis_master`)
               return
             }
 
@@ -306,23 +306,23 @@ export function useCapitalAcrossThesisQuery(userId: string | null) {
     .channel('capital-across-thesis')
     .on('postgres_changes',
       { 
-        schema: 'hf', 
-        table: 'positionsAndThesisConnection', 
+        schema: 'fund_ai',
+        table: 'p_positions_thesis_connections',
         event: '*' 
       },
       () => {
-        console.log('🔄 positionsAndThesisConnection changed, invalidating query')
+        console.log('🔄 p_positions_thesis_connections changed, invalidating query')
         qc.invalidateQueries({ queryKey: key })
       }
     )
     .on('postgres_changes',
       { 
-        schema: 'hf', 
-        table: 'thesisMaster', 
+        schema: 'fund_ai',
+        table: 'p_thesis_master',
         event: '*' 
       },
       () => {
-        console.log('🔄 thesisMaster changed, invalidating query')
+        console.log('🔄 p_thesis_master changed, invalidating query')
         qc.invalidateQueries({ queryKey: key })
       }
     )

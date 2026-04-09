@@ -53,8 +53,8 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
         let accountIds: string[] = accessibleAccountIds
         if (accountIds.length === 0) {
           const { data: allAccounts, error: allAccountsError } = await supabase
-            .schema('hf')
-            .from('netliquidation')
+            .schema('fund_ai')
+            .from('p_dashboard_netliquidation')
             .select('internal_account_id')
             .neq('internal_account_id', null)
           
@@ -69,8 +69,8 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
         const fetchedAtPromises = accountIds.map(async (accountId) => {
           // Get latest NLV record up to end of selected day
           const { data: nlvData, error: nlvError } = await supabase
-            .schema('hf')
-            .from('netliquidation')
+            .schema('fund_ai')
+            .from('p_dashboard_netliquidation')
             .select('*')
             .eq('internal_account_id', accountId)
             .lte('fetched_at', endOfDay)
@@ -85,8 +85,8 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
           
           // Get latest maintenance margin record up to end of selected day
           const { data: mmData, error: mmError } = await supabase
-            .schema('hf')
-            .from('maintenance_margin')
+            .schema('fund_ai')
+            .from('p_dashboard_maintenance_margin')
             .select('*')
             .eq('internal_account_id', accountId)
             .lte('fetched_at', endOfDay)
@@ -115,8 +115,8 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
         result = fetchedResults.filter(r => r !== null) as nlvMargin[]
         
         const { data: accountData } = await supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity, archived, sync_mode')
         
         const accountMap = new Map(
@@ -132,7 +132,7 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
         
       } else {
         const { data, error } = await supabase
-          .schema('hf')
+          .schema('fund_ai')
           .rpc('get_nlv_margin_with_excess_and_sync_type', {
             p_limit: limit
           })
@@ -144,8 +144,8 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
       let aliasMap: Map<string, string> = new Map()
       if (userId) {
         const { data: aliasData } = await supabase
-          .schema('hf')
-          .from('user_account_alias')
+          .schema('fund_ai')
+          .from('core_accounts_alias')
           .select('internal_account_id, alias')
           .eq('user_id', userId)
         aliasMap = new Map((aliasData || []).map((a: any) => [a.internal_account_id, a.alias]))
@@ -180,8 +180,8 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
     .channel(`netliquidation_all`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'netliquidation',
+        schema: 'fund_ai',
+        table: 'p_dashboard_netliquidation',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })
@@ -192,8 +192,8 @@ export function useNlvMarginQuery(limit: number, userId?: string | null, asOfDat
     .channel(`maintenance_margin_all`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'maintenance_margin',
+        schema: 'fund_ai',
+        table: 'p_dashboard_maintenance_margin',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })

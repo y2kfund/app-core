@@ -23,7 +23,7 @@ async function H(e, n) {
     return console.log("⚠️ No userId provided, showing all positions"), [];
   try {
     console.log("👤 Fetching accessible accounts for user:", n);
-    const { data: r, error: o } = await e.schema("hf").from("user_account_access").select("internal_account_id").eq("user_id", n).eq("is_active", !0);
+    const { data: r, error: o } = await e.schema("fund_ai").from("core_accounts_access").select("internal_account_id").eq("user_id", n).eq("is_active", !0);
     if (o)
       return console.error("❌ Error fetching user account access:", o), [];
     if (!r || r.length === 0)
@@ -44,7 +44,7 @@ function ce() {
   return y({
     queryKey: n,
     queryFn: async () => {
-      const { data: o, error: t } = await e.schema("hf").from("thesisMaster").select("*").order("title");
+      const { data: o, error: t } = await e.schema("fund_ai").from("p_thesis_master").select("*").order("title");
       if (t)
         throw console.error("❌ Thesis query error:", t), t;
       return o || [];
@@ -58,7 +58,7 @@ function le() {
   return y({
     queryKey: n,
     queryFn: async () => {
-      const { data: o, error: t } = await e.schema("hf").from("positionsAndThesisConnection").select("*").order("symbol_root");
+      const { data: o, error: t } = await e.schema("fund_ai").from("p_positions_thesis_connections").select("*").order("symbol_root");
       if (t)
         throw console.error("❌ Thesis connections query error:", t), t;
       return o || [];
@@ -72,7 +72,7 @@ function ue(e) {
 }
 async function ne(e, n) {
   try {
-    const { data: r, error: o } = await e.schema("hf").from("position_position_mappings").select("mapping_key, attached_position_key").eq("user_id", n);
+    const { data: r, error: o } = await e.schema("fund_ai").from("p_positions_position_mappings").select("mapping_key, attached_position_key").eq("user_id", n);
     if (o)
       return console.error("❌ Error fetching position-position mappings:", o), /* @__PURE__ */ new Map();
     const t = /* @__PURE__ */ new Map();
@@ -85,7 +85,7 @@ async function ne(e, n) {
 }
 async function pe(e, n, r, o) {
   try {
-    const { error: t } = await e.schema("hf").from("position_position_mappings").delete().eq("user_id", n).eq("mapping_key", r);
+    const { error: t } = await e.schema("fund_ai").from("p_positions_position_mappings").delete().eq("user_id", n).eq("mapping_key", r);
     if (t)
       throw console.error("❌ Error deleting old mappings:", t), t;
     if (o.size > 0) {
@@ -94,7 +94,7 @@ async function pe(e, n, r, o) {
         mapping_key: r,
         attached_position_key: u,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      })), { error: a } = await e.schema("hf").from("position_position_mappings").upsert(i, {
+      })), { error: a } = await e.schema("fund_ai").from("p_positions_position_mappings").upsert(i, {
         onConflict: "user_id,mapping_key,attached_position_key",
         ignoreDuplicates: !1
       });
@@ -110,7 +110,7 @@ async function pe(e, n, r, o) {
     throw console.error("❌ Exception saving position-position mappings:", t), t;
   }
 }
-function de(e) {
+function _e(e) {
   const n = w();
   return y({
     queryKey: ["positionPositionMappings", e],
@@ -121,7 +121,7 @@ function de(e) {
 }
 async function oe(e, n) {
   try {
-    const { data: r, error: o } = await e.schema("hf").from("position_trade_mappings").select("mapping_key, trade_id").eq("user_id", n);
+    const { data: r, error: o } = await e.schema("fund_ai").from("p_positions_trade_mappings").select("mapping_key, trade_id").eq("user_id", n);
     if (o)
       return console.error("❌ Error fetching position trade mappings:", o), /* @__PURE__ */ new Map();
     const t = /* @__PURE__ */ new Map();
@@ -132,9 +132,9 @@ async function oe(e, n) {
     return console.error("❌ Exception fetching position trade mappings:", r), /* @__PURE__ */ new Map();
   }
 }
-async function fe(e, n, r, o) {
+async function de(e, n, r, o) {
   try {
-    const { error: t } = await e.schema("hf").from("position_trade_mappings").delete().eq("user_id", n).eq("mapping_key", r);
+    const { error: t } = await e.schema("fund_ai").from("p_positions_trade_mappings").delete().eq("user_id", n).eq("mapping_key", r);
     if (t)
       throw console.error("❌ Error deleting old mappings:", t), t;
     if (o.size > 0) {
@@ -143,7 +143,7 @@ async function fe(e, n, r, o) {
         mapping_key: r,
         trade_id: u,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      })), { error: a } = await e.schema("hf").from("position_trade_mappings").upsert(i, {
+      })), { error: a } = await e.schema("fund_ai").from("p_positions_trade_mappings").upsert(i, {
         onConflict: "user_id,mapping_key,trade_id",
         ignoreDuplicates: !1
         // Update the updated_at if already exists
@@ -160,7 +160,7 @@ async function fe(e, n, r, o) {
     throw console.error("❌ Exception saving position trade mappings:", t), t;
   }
 }
-function _e(e) {
+function fe(e) {
   const n = w();
   return y({
     queryKey: ["positionTradeMappings", e],
@@ -170,16 +170,16 @@ function _e(e) {
     // 1 minute
   });
 }
-function he(e) {
+function me(e) {
   const n = e.contract_quantity ?? e.qty;
   return `${e.internal_account_id}|${e.symbol}|${n}|${e.asset_class}|${e.conid}`;
 }
-function me(e) {
+function he(e) {
   const n = w();
   return y({
     queryKey: ["symbolComments", e],
     queryFn: async () => {
-      const { data: r, error: o } = await n.schema("hf").from("positions_symbol_comments").select("*").eq("user_id", e);
+      const { data: r, error: o } = await n.schema("fund_ai").from("p_positions_symbol_comments").select("*").eq("user_id", e);
       if (o) throw o;
       return r || [];
     },
@@ -187,7 +187,7 @@ function me(e) {
   });
 }
 async function ge(e, n, r, o) {
-  const { error: t } = await e.schema("hf").from("positions_symbol_comments").upsert({
+  const { error: t } = await e.schema("fund_ai").from("p_positions_symbol_comments").upsert({
     comment_key: n,
     user_id: r,
     comment: o,
@@ -197,7 +197,7 @@ async function ge(e, n, r, o) {
 }
 async function re(e, n) {
   try {
-    const { data: r, error: o } = await e.schema("hf").from("position_order_mappings").select("mapping_key, order_id").eq("user_id", n);
+    const { data: r, error: o } = await e.schema("fund_ai").from("p_positions_order_mappings").select("mapping_key, order_id").eq("user_id", n);
     if (o)
       return console.error("❌ Error fetching position-order mappings:", o), /* @__PURE__ */ new Map();
     const t = /* @__PURE__ */ new Map();
@@ -210,7 +210,7 @@ async function re(e, n) {
 }
 async function ye(e, n, r, o) {
   try {
-    const { error: t } = await e.schema("hf").from("position_order_mappings").delete().eq("user_id", n).eq("mapping_key", r);
+    const { error: t } = await e.schema("fund_ai").from("p_positions_order_mappings").delete().eq("user_id", n).eq("mapping_key", r);
     if (t)
       throw console.error("❌ Error deleting old order mappings:", t), t;
     if (o.size > 0) {
@@ -219,7 +219,7 @@ async function ye(e, n, r, o) {
         mapping_key: r,
         order_id: u,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      })), { error: a } = await e.schema("hf").from("position_order_mappings").upsert(i, {
+      })), { error: a } = await e.schema("fund_ai").from("p_positions_order_mappings").upsert(i, {
         onConflict: "user_id,mapping_key,order_id",
         ignoreDuplicates: !1
       });
@@ -248,21 +248,21 @@ function qe(e, n, r) {
   const o = w(), t = Z(), i = () => r && typeof r == "object" && "value" in r ? r.value : r, a = [...Q.positions(e, n), i()], u = y({
     queryKey: a,
     queryFn: async () => {
-      var U, N, j, B;
-      const m = i(), f = await H(o, n);
-      console.log("🔍 Querying positions with asOf:", m);
-      let p = f;
+      var U, D, N, j;
+      const h = i(), d = await H(o, n);
+      console.log("🔍 Querying positions with asOf:", h);
+      let p = d;
       if (p.length === 0) {
-        const { data: s, error: c } = await o.schema("hf").from("positions").select("internal_account_id").neq("internal_account_id", null).then((b) => {
+        const { data: s, error: c } = await o.schema("fund_ai").from("p_positions_positions").select("internal_account_id").neq("internal_account_id", null).then((b) => {
           var g;
-          return { data: ((g = b.data) == null ? void 0 : g.map((P) => P.internal_account_id)) ?? [], error: b.error };
+          return { data: ((g = b.data) == null ? void 0 : g.map((C) => C.internal_account_id)) ?? [], error: b.error };
         });
         if (c)
           return console.error("❌ Error fetching all account IDs:", c), [];
         p = Array.from(new Set(s));
       }
       if (p.length > 0) {
-        const { data: s, error: c } = await o.schema("hf").from("user_accounts_master").select("internal_account_id").in("internal_account_id", p).eq("archived", !1);
+        const { data: s, error: c } = await o.schema("fund_ai").from("core_accounts_master").select("internal_account_id").in("internal_account_id", p).eq("archived", !1);
         if (c)
           console.error("❌ Error filtering archived accounts:", c);
         else if (s) {
@@ -270,68 +270,68 @@ function qe(e, n, r) {
           p = s.map((g) => g.internal_account_id), b !== p.length && console.log(`🗃️ Filtered out ${b - p.length} archived account(s)`);
         }
       }
-      let T;
-      if (m) {
-        const { data: s, error: c } = await o.schema("hf").rpc("get_latest_fetched_at_per_account", {
+      let v;
+      if (h) {
+        const { data: s, error: c } = await o.schema("fund_ai").rpc("get_latest_fetched_at_per_account", {
           account_ids: p,
-          as_of_date: m
+          as_of_date: h
         });
         if (c)
           throw console.error("❌ Error fetching as-of fetched_at:", c), c;
-        T = s || [];
+        v = s || [];
       } else {
-        const { data: s, error: c } = await o.schema("hf").from("positions").select("internal_account_id, fetched_at").in("internal_account_id", p).order("fetched_at", { ascending: !1 });
+        const { data: s, error: c } = await o.schema("fund_ai").from("p_positions_positions").select("internal_account_id, fetched_at").in("internal_account_id", p).order("fetched_at", { ascending: !1 });
         if (c)
           throw console.error("❌ Error fetching latest fetched_at per account:", c), c;
-        T = s || [];
+        v = s || [];
       }
       const k = /* @__PURE__ */ new Map();
-      for (const s of T)
+      for (const s of v)
         k.has(s.internal_account_id) || k.set(s.internal_account_id, s.fetched_at);
       const l = Array.from(k.entries()).map(
-        ([s, c]) => o.schema("hf").from("positions").select("*").eq("internal_account_id", s).eq("fetched_at", c)
+        ([s, c]) => o.schema("fund_ai").from("p_positions_positions").select("*").eq("internal_account_id", s).eq("fetched_at", c)
       ), q = await Promise.all(l), S = q.flatMap((s) => s.data || []);
       console.log("🔍 Querying positions with config:", {
         accountId: e,
-        schema: "hf",
-        table: "positions",
+        schema: "fund_ai",
+        table: "p_positions_positions",
         userId: n || "none",
-        accessibleAccountIds: f.length > 0 ? f : "all"
+        accessibleAccountIds: d.length > 0 ? d : "all"
       });
-      const [$, v, A, C, O, J] = await Promise.all([
+      const [$, T, P, A, O, J] = await Promise.all([
         q[0],
-        o.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        o.schema("hf").from("thesisMaster").select("id, title, description"),
-        o.schema("hf").from("positionsAndThesisConnection").select("*"),
-        o.schema("hf").rpc("get_latest_market_prices"),
-        n ? o.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", n) : { data: [], error: null }
+        o.schema("fund_ai").from("core_accounts_master").select("internal_account_id, legal_entity"),
+        o.schema("fund_ai").from("p_thesis_master").select("id, title, description"),
+        o.schema("fund_ai").from("p_positions_thesis_connections").select("*"),
+        o.schema("fund_ai").rpc("get_latest_market_prices"),
+        n ? o.schema("fund_ai").from("core_accounts_alias").select("internal_account_id, alias").eq("user_id", n) : { data: [], error: null }
       ]);
       if ($.error)
         throw console.error("❌ Positions query error:", $.error), $.error;
-      if (v.error)
-        throw console.error("❌ Accounts query error:", v.error), v.error;
+      if (T.error)
+        throw console.error("❌ Accounts query error:", T.error), T.error;
+      if (P.error)
+        throw console.error("❌ Thesis query error:", P.error), P.error;
       if (A.error)
-        throw console.error("❌ Thesis query error:", A.error), A.error;
-      if (C.error)
-        throw console.error("❌ Thesis connections query error:", C.error), C.error;
+        throw console.error("❌ Thesis connections query error:", A.error), A.error;
       let F = [];
       O.error ? console.error("❌ Market price query error:", O.error) : (F = O.data || [], console.log(`📊 Fetched ${F.length} market price records`)), console.log("✅ Positions query success:", {
         positionsCount: (U = $.data) == null ? void 0 : U.length,
-        accountsCount: (N = v.data) == null ? void 0 : N.length,
-        thesisCount: (j = A.data) == null ? void 0 : j.length,
-        thesisConnectionsCount: (B = C.data) == null ? void 0 : B.length,
+        accountsCount: (D = T.data) == null ? void 0 : D.length,
+        thesisCount: (N = P.data) == null ? void 0 : N.length,
+        thesisConnectionsCount: (j = A.data) == null ? void 0 : j.length,
         marketPricesCount: F.length,
-        filtered: f.length > 0,
-        accessibleAccounts: f.length > 0 ? f : "all"
+        filtered: d.length > 0,
+        accessibleAccounts: d.length > 0 ? d : "all"
       });
       const x = new Map(
         (J.data || []).map((s) => [s.internal_account_id, s.alias])
       ), L = new Map(
-        (v.data || []).map((s) => [s.internal_account_id, s.legal_entity])
+        (T.data || []).map((s) => [s.internal_account_id, s.legal_entity])
       ), X = new Map(
-        (A.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
+        (P.data || []).map((s) => [s.id, { id: s.id, title: s.title, description: s.description }])
       ), K = /* @__PURE__ */ new Map();
-      (C.data || []).forEach((s) => {
+      (A.data || []).forEach((s) => {
         const c = X.get(s.thesis_id);
         c && K.set(V(s.symbol_root) || s.symbol_root, c);
       });
@@ -341,13 +341,13 @@ function qe(e, n, r) {
       console.log(`📊 Processed ${M.size} unique conids with latest prices`);
       const z = S.map((s) => {
         const c = V(s.symbol), b = c ? K.get(c) : null;
-        let g = null, P = null, D = null, R = null;
+        let g = null, C = null, B = null, R = null;
         if (s.asset_class === "STK" || s.asset_class === "FUND") {
-          const _ = M.get(s.conid);
-          g = (_ == null ? void 0 : _.price) || null, P = (_ == null ? void 0 : _.fetchedAt) || null;
+          const f = M.get(s.conid);
+          g = (f == null ? void 0 : f.price) || null, C = (f == null ? void 0 : f.fetchedAt) || null;
         } else if (s.asset_class === "OPT") {
-          const _ = M.get(s.conid), E = M.get(s.undConid);
-          D = (_ == null ? void 0 : _.price) || null, R = (E == null ? void 0 : E.price) || null, g = R, P = (E == null ? void 0 : E.fetchedAt) || null;
+          const f = M.get(s.conid), E = M.get(s.undConid);
+          B = (f == null ? void 0 : f.price) || null, R = (E == null ? void 0 : E.price) || null, g = R, C = (E == null ? void 0 : E.fetchedAt) || null;
         }
         let W = L.get(s.internal_account_id) || void 0;
         return x.has(s.internal_account_id) && (W = x.get(s.internal_account_id)), {
@@ -355,27 +355,27 @@ function qe(e, n, r) {
           legal_entity: W,
           thesis: b,
           market_price: g,
-          market_price_fetched_at: P,
-          option_market_price: D,
+          market_price_fetched_at: C,
+          option_market_price: B,
           underlying_market_price: R
         };
       });
       return console.log("✅ Enriched positions with accounts and thesis", z), z;
     },
     staleTime: 6e4
-  }), d = o.channel(`positions:${e}`).on(
+  }), _ = o.channel(`positions:${e}`).on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "positions",
+      schema: "fund_ai",
+      table: "p_positions_positions",
       event: "*"
     },
     () => t.invalidateQueries({ queryKey: a })
-  ).subscribe(), h = o.channel("thesis-connections").on(
+  ).subscribe(), m = o.channel("thesis-connections").on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "positionsAndThesisConnection",
+      schema: "fund_ai",
+      table: "p_positions_thesis_connections",
       event: "*"
     },
     () => t.invalidateQueries({ queryKey: a })
@@ -383,8 +383,8 @@ function qe(e, n, r) {
   return {
     ...u,
     _cleanup: () => {
-      var m, f;
-      (m = d == null ? void 0 : d.unsubscribe) == null || m.call(d), (f = h == null ? void 0 : h.unsubscribe) == null || f.call(h);
+      var h, d;
+      (h = _ == null ? void 0 : _.unsubscribe) == null || h.call(_), (d = m == null ? void 0 : m.unsubscribe) == null || d.call(m);
     }
   };
 }
@@ -392,30 +392,30 @@ async function be(e, n, r, o) {
   try {
     console.log("🔍 Fetching positions for symbol root:", n, "account:", o);
     const t = await H(e, r);
-    let i = e.schema("hf").from("positions").select("*").ilike("symbol", `${n}%`);
+    let i = e.schema("fund_ai").from("p_positions_positions").select("*").ilike("symbol", `${n}%`);
     o && (i = i.eq("internal_account_id", o)), t.length > 0 && (i = i.in("internal_account_id", t)), i = i.order("fetched_at", { ascending: !1 });
     const { data: a, error: u } = await i;
     if (u)
       throw console.error("❌ Error fetching positions by symbol root:", u), u;
     console.log("📊 Fetched positions count:", (a == null ? void 0 : a.length) || 0);
-    const d = /* @__PURE__ */ new Map(), h = (a || []).filter((l) => {
+    const _ = /* @__PURE__ */ new Map(), m = (a || []).filter((l) => {
       const q = l.contract_quantity ?? l.qty, S = `${l.internal_account_id}|${l.symbol}|${q}|${l.asset_class}|${l.conid}`;
-      return d.has(S) ? !1 : (d.set(S, l), !0);
+      return _.has(S) ? !1 : (_.set(S, l), !0);
     });
     console.log(
       "📊 Deduplicated positions count:",
-      h.length,
-      `(removed ${((a == null ? void 0 : a.length) || 0) - h.length} duplicates)`
+      m.length,
+      `(removed ${((a == null ? void 0 : a.length) || 0) - m.length} duplicates)`
     );
-    const [m, f] = await Promise.all([
-      e.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-      r ? e.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", r) : { data: [], error: null }
+    const [h, d] = await Promise.all([
+      e.schema("fund_ai").from("core_accounts_master").select("internal_account_id, legal_entity"),
+      r ? e.schema("fund_ai").from("core_accounts_alias").select("internal_account_id, alias").eq("user_id", r) : { data: [], error: null }
     ]), p = new Map(
-      (f.data || []).map((l) => [l.internal_account_id, l.alias])
-    ), T = new Map(
-      (m.data || []).map((l) => [l.internal_account_id, l.legal_entity])
-    ), k = h.map((l) => {
-      let q = T.get(l.internal_account_id) || void 0;
+      (d.data || []).map((l) => [l.internal_account_id, l.alias])
+    ), v = new Map(
+      (h.data || []).map((l) => [l.internal_account_id, l.legal_entity])
+    ), k = m.map((l) => {
+      let q = v.get(l.internal_account_id) || void 0;
       return p.has(l.internal_account_id) && (q = p.get(l.internal_account_id)), {
         ...l,
         legal_entity: q,
@@ -441,7 +441,7 @@ function ke(e) {
   const n = w(), r = Q.trades(e), o = Z(), t = y({
     queryKey: r,
     queryFn: async () => {
-      const { data: a, error: u } = await n.schema("hf").from("trades").select("*").eq("account_id", e).order("trade_date", { ascending: !1 });
+      const { data: a, error: u } = await n.schema("fund_ai").from("p_trades_trades").select("*").eq("internal_account_id", e).order('"tradeDate"', { ascending: !1 });
       if (u) throw u;
       return a || [];
     },
@@ -449,10 +449,10 @@ function ke(e) {
   }), i = n.channel(`trades:${e}`).on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "trades",
+      schema: "fund_ai",
+      table: "p_trades_trades",
       event: "*",
-      filter: `account_id=eq.${e}`
+      filter: `internal_account_id=eq.${e}`
     },
     () => o.invalidateQueries({ queryKey: r })
   ).subscribe();
@@ -481,8 +481,8 @@ async function Me(e) {
     }
   });
   return {
-    install(d) {
-      d.provide(G, i), d.use(ee, { queryClient: a });
+    install(_) {
+      _.provide(G, i), _.use(ee, { queryClient: a });
     }
   };
 }
@@ -495,19 +495,19 @@ export {
   oe as fetchPositionTradeMappings,
   be as fetchPositionsBySymbolRoot,
   H as fetchUserAccessibleAccounts,
-  he as generateCommentKey,
+  me as generateCommentKey,
   ue as generatePositionMappingKey,
   Q as queryKeys,
   ye as savePositionOrderMappings,
   pe as savePositionPositionMappings,
-  fe as savePositionTradeMappings,
+  de as savePositionTradeMappings,
   ge as upsertSymbolComment,
   we as usePositionOrderMappingsQuery,
-  de as usePositionPositionMappingsQuery,
-  _e as usePositionTradeMappingsQuery,
+  _e as usePositionPositionMappingsQuery,
+  fe as usePositionTradeMappingsQuery,
   qe as usePositionsQuery,
   w as useSupabase,
-  me as useSymbolCommentsQuery,
+  he as useSymbolCommentsQuery,
   le as useThesisConnectionsQuery,
   ce as useThesisQuery,
   ke as useTradesQuery

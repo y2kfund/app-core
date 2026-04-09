@@ -111,8 +111,8 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
 
       // Step 2: Get the latest fetched_at timestamp from positions table
       const { data: maxFetchedAtRes, error: maxFetchedAtError } = await supabase
-        .schema('hf')
-        .from('positions')
+        .schema('fund_ai')
+        .from('p_positions_positions')
         .select('fetched_at')
         .order('fetched_at', { ascending: false })
         .limit(1)
@@ -133,8 +133,8 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
 
       // Step 3: Build the main query to fetch all relevant positions
       let positionsQuery = supabase
-        .schema('hf')
-        .from('positions')
+        .schema('fund_ai')
+        .from('p_positions_positions')
         .select('*')
         .eq('fetched_at', latestFetchedAt)
         .in('asset_class', ['STK', 'OPT', 'FUND'])
@@ -200,13 +200,13 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
       // Step 6: Fetch accounts and aliases for account name enrichment
       const [acctRes, aliasRes] = await Promise.all([
         supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity'),
         userId
           ? supabase
-              .schema('hf')
-              .from('user_account_alias')
+              .schema('fund_ai')
+              .from('core_accounts_alias')
               .select('internal_account_id, alias')
               .eq('user_id', userId)
           : { data: [], error: null }
@@ -262,8 +262,8 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
 
       // Query market prices - get latest price per symbol
       const { data: marketPriceData, error: marketPriceError } = await supabase
-        .schema('hf')
-        .from('market_price')
+        .schema('fund_ai')
+        .from('p_positions_market_price')
         .select('symbol, market_price')
         .in('symbol', uniqueSymbolRoots)
         .order('id', { ascending: false })
@@ -325,8 +325,8 @@ export function useTop20PositionsByCapitalQuery(userId: string | null) {
     .channel('top20-capital-deployed')
     .on('postgres_changes',
       { 
-        schema: 'hf', 
-        table: 'positions', 
+        schema: 'fund_ai',
+        table: 'p_positions_positions',
         event: '*' 
       },
       () => {

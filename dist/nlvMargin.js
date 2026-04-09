@@ -1,100 +1,100 @@
 import { useQueryClient as A, useQuery as E } from "@tanstack/vue-query";
 import { useSupabase as N, queryKeys as Q, fetchUserAccessibleAccounts as S } from "./index.js";
 function V(g, _, u) {
-  const c = N(), v = () => u && typeof u == "object" && "value" in u ? u.value : u, h = [...Q.nlvMargin(g, _), v()], p = A(), q = E({
-    queryKey: h,
+  const c = N(), y = () => u && typeof u == "object" && "value" in u ? u.value : u, m = [...Q.nlvMargin(g, _), y()], v = A(), q = E({
+    queryKey: m,
     queryFn: async () => {
-      const r = v(), i = await S(c, _);
+      const l = y(), i = await S(c, _);
       console.log("🔍 Querying NLV/Margin with config:", {
         limit: g,
         userId: _ || "none",
-        asOfDate: r || "latest",
+        asOfDate: l || "latest",
         accessibleAccountIds: i.length > 0 ? i : "all"
       });
-      let t = [];
-      if (r) {
-        const n = (/* @__PURE__ */ new Date(r + "T23:59:59.999Z")).toISOString();
-        console.log("📅 Fetching historical NLV/Margin data for date:", r, "up to:", n);
-        let l = i;
-        if (l.length === 0) {
-          const { data: e, error: a } = await c.schema("hf").from("netliquidation").select("internal_account_id").neq("internal_account_id", null);
-          if (a)
-            throw console.error("❌ Error fetching all account IDs:", a), a;
-          l = Array.from(new Set((e || []).map((s) => s.internal_account_id)));
+      let n = [];
+      if (l) {
+        const a = (/* @__PURE__ */ new Date(l + "T23:59:59.999Z")).toISOString();
+        console.log("📅 Fetching historical NLV/Margin data for date:", l, "up to:", a);
+        let r = i;
+        if (r.length === 0) {
+          const { data: e, error: t } = await c.schema("fund_ai").from("p_dashboard_netliquidation").select("internal_account_id").neq("internal_account_id", null);
+          if (t)
+            throw console.error("❌ Error fetching all account IDs:", t), t;
+          r = Array.from(new Set((e || []).map((s) => s.internal_account_id)));
         }
-        const M = l.map(async (e) => {
-          const { data: a, error: s } = await c.schema("hf").from("netliquidation").select("*").eq("internal_account_id", e).lte("fetched_at", n).order("fetched_at", { ascending: !1 }).limit(1).single();
+        const M = r.map(async (e) => {
+          const { data: t, error: s } = await c.schema("fund_ai").from("p_dashboard_netliquidation").select("*").eq("internal_account_id", e).lte("fetched_at", a).order("fetched_at", { ascending: !1 }).limit(1).single();
           if (s && s.code !== "PGRST116")
             return console.error(`❌ Error fetching NLV for ${e}:`, s), null;
-          const { data: o, error: y } = await c.schema("hf").from("maintenance_margin").select("*").eq("internal_account_id", e).lte("fetched_at", n).order("fetched_at", { ascending: !1 }).limit(1).single();
-          return y && y.code !== "PGRST116" ? (console.error(`❌ Error fetching MM for ${e}:`, y), null) : !a || !o ? null : {
-            nlv_id: a.id,
-            nlv_val: a.nlv,
-            fetched_at_val: a.fetched_at,
+          const { data: o, error: p } = await c.schema("fund_ai").from("p_dashboard_maintenance_margin").select("*").eq("internal_account_id", e).lte("fetched_at", a).order("fetched_at", { ascending: !1 }).limit(1).single();
+          return p && p.code !== "PGRST116" ? (console.error(`❌ Error fetching MM for ${e}:`, p), null) : !t || !o ? null : {
+            nlv_id: t.id,
+            nlv_val: t.nlv,
+            fetched_at_val: t.fetched_at,
             maintenance_val: parseFloat(o.maintenance),
             nlv_internal_account_id: e,
-            excess_maintenance_margin: a.nlv - parseFloat(o.maintenance)
+            excess_maintenance_margin: t.nlv - parseFloat(o.maintenance)
           };
         });
-        t = (await Promise.all(M)).filter((e) => e !== null);
-        const { data: w } = await c.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity, archived, sync_mode"), m = new Map(
+        n = (await Promise.all(M)).filter((e) => e !== null);
+        const { data: w } = await c.schema("fund_ai").from("core_accounts_master").select("internal_account_id, legal_entity, archived, sync_mode"), h = new Map(
           (w || []).map((e) => [e.internal_account_id, e])
         );
-        t = t.map((e) => {
-          var a, s, o;
+        n = n.map((e) => {
+          var t, s, o;
           return {
             ...e,
-            legal_entity: (a = m.get(e.nlv_internal_account_id || "")) == null ? void 0 : a.legal_entity,
-            archived: ((s = m.get(e.nlv_internal_account_id || "")) == null ? void 0 : s.archived) || !1,
-            sync_mode: (o = m.get(e.nlv_internal_account_id || "")) == null ? void 0 : o.sync_mode
+            legal_entity: (t = h.get(e.nlv_internal_account_id || "")) == null ? void 0 : t.legal_entity,
+            archived: ((s = h.get(e.nlv_internal_account_id || "")) == null ? void 0 : s.archived) || !1,
+            sync_mode: (o = h.get(e.nlv_internal_account_id || "")) == null ? void 0 : o.sync_mode
           };
         });
       } else {
-        const { data: n, error: l } = await c.schema("hf").rpc("get_nlv_margin_with_excess_and_sync_type", {
+        const { data: a, error: r } = await c.schema("fund_ai").rpc("get_nlv_margin_with_excess_and_sync_type", {
           p_limit: g
         });
-        if (l) throw l;
-        t = n || [];
+        if (r) throw r;
+        n = a || [];
       }
       let b = /* @__PURE__ */ new Map();
       if (_) {
-        const { data: n } = await c.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", _);
-        b = new Map((n || []).map((l) => [l.internal_account_id, l.alias]));
+        const { data: a } = await c.schema("fund_ai").from("core_accounts_alias").select("internal_account_id, alias").eq("user_id", _);
+        b = new Map((a || []).map((r) => [r.internal_account_id, r.alias]));
       }
-      return t = t.map((n) => ({
-        ...n,
-        legal_entity: b.get(n.nlv_internal_account_id || "") || n.legal_entity
-      })), i.length > 0 && t.length > 0 && t[0] && "nlv_internal_account_id" in t[0] && (console.log("🔒 Applying access filter for NLV/Margin data"), t = t.filter(
-        (n) => n.nlv_internal_account_id && i.includes(n.nlv_internal_account_id)
+      return n = n.map((a) => ({
+        ...a,
+        legal_entity: b.get(a.nlv_internal_account_id || "") || a.legal_entity
+      })), i.length > 0 && n.length > 0 && n[0] && "nlv_internal_account_id" in n[0] && (console.log("🔒 Applying access filter for NLV/Margin data"), n = n.filter(
+        (a) => a.nlv_internal_account_id && i.includes(a.nlv_internal_account_id)
       )), console.log("✅ NLV/Margin query success:", {
-        totalRows: t.length,
-        asOfDate: r || "latest",
+        totalRows: n.length,
+        asOfDate: l || "latest",
         filtered: i.length > 0
-      }), t;
+      }), n;
     },
     staleTime: 6e4
   }), d = c.channel("netliquidation_all").on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "netliquidation",
+      schema: "fund_ai",
+      table: "p_dashboard_netliquidation",
       event: "*"
     },
-    () => p.invalidateQueries({ queryKey: h })
+    () => v.invalidateQueries({ queryKey: m })
   ).subscribe(), f = c.channel("maintenance_margin_all").on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "maintenance_margin",
+      schema: "fund_ai",
+      table: "p_dashboard_maintenance_margin",
       event: "*"
     },
-    () => p.invalidateQueries({ queryKey: h })
+    () => v.invalidateQueries({ queryKey: m })
   ).subscribe();
   return {
     ...q,
     _cleanup: () => {
-      var r, i;
-      (r = d == null ? void 0 : d.unsubscribe) == null || r.call(d), (i = f == null ? void 0 : f.unsubscribe) == null || i.call(f);
+      var l, i;
+      (l = d == null ? void 0 : d.unsubscribe) == null || l.call(d), (i = f == null ? void 0 : f.unsubscribe) == null || i.call(f);
     }
   };
 }

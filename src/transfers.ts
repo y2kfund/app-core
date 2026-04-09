@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useSupabase, fetchUserAccessibleAccounts, queryKeys } from './core'
 
-// Data types - matching the actual database schema for hf.transfers
+// Data types - matching the actual database schema for fund_ai.p_trades_transfers
 export interface Transfer {
-  id: number
+  id: string
   internal_account_id?: string
   fetched_at?: string
   accountId: string
@@ -61,7 +61,7 @@ export interface Transfer {
   commodityType?: string
   fineness?: number
   weight?: number
-  legal_entity?: string  // Enriched from user_accounts_master
+  legal_entity?: string  // Enriched from core_accounts_master
 }
 
 // Transfers query hook
@@ -78,16 +78,16 @@ export function useTransfersQuery(accountId: string, userId?: string | null) {
 
       console.log('🔍 Querying transfers with config:', {
         accountId,
-        schema: 'hf',
-        table: 'transfers',
+        schema: 'fund_ai',
+        table: 'p_trades_transfers',
         userId: userId || 'none',
         accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
 
       // Step 2: Get the latest fetched_at timestamp
       const maxFetchedAtRes = await supabase
-        .schema('hf')
-        .from('transfers')
+        .schema('fund_ai')
+        .from('p_trades_transfers')
         .select('fetched_at')
         .order('fetched_at', { ascending: false })
         .limit(1)
@@ -108,8 +108,8 @@ export function useTransfersQuery(accountId: string, userId?: string | null) {
 
       // Step 3: Build transfers query with optional access filter
       let transfersQuery = supabase
-        .schema('hf')
-        .from('transfers')
+        .schema('fund_ai')
+        .from('p_trades_transfers')
         .select(`
           id,
           internal_account_id,
@@ -186,13 +186,13 @@ export function useTransfersQuery(accountId: string, userId?: string | null) {
       const [transfersRes, acctRes, aliasRes] = await Promise.all([
         transfersQuery,
         supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity'),
         userId
           ? supabase
-              .schema('hf')
-              .from('user_account_alias')
+              .schema('fund_ai')
+              .from('core_accounts_alias')
               .select('internal_account_id, alias')
               .eq('user_id', userId)
           : { data: [], error: null }
@@ -250,8 +250,8 @@ export function useTransfersQuery(accountId: string, userId?: string | null) {
     .channel(`transfers:${accountId}`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'transfers',
+        schema: 'fund_ai',
+        table: 'p_trades_transfers',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })

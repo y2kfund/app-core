@@ -1,6 +1,6 @@
 import { useQueryClient as m, useMutation as l, useQuery as y } from "@tanstack/vue-query";
-import { useSupabase as o } from "./index.js";
-import { unref as d, computed as w } from "vue";
+import { useSupabase as i } from "./index.js";
+import { unref as _, computed as p } from "vue";
 const r = {
   all: ["tasks"],
   list: (t) => [...r.all, "list", t],
@@ -9,15 +9,15 @@ const r = {
   history: (t) => [...r.all, "history", t]
 };
 function b(t) {
-  const a = o();
+  const a = i();
   return y({
-    queryKey: w(() => {
-      const e = t ? d(t) : {};
+    queryKey: p(() => {
+      const e = t ? _(t) : {};
       return r.list(e);
     }),
     queryFn: async () => {
-      const e = t ? d(t) : {};
-      let s = a.schema("hf").from("tasks").select("*").order("created_at", { ascending: !1 });
+      const e = t ? _(t) : {};
+      let s = a.schema("fund_ai").from("p_tasks_tasks").select("*").order("created_at", { ascending: !1 });
       if (e != null && e.status && (s = s.eq("status", e.status)), e != null && e.search && e.search.trim()) {
         const c = e.search.trim();
         s = s.or(`summary.ilike.%${c}%,description.ilike.%${c}%`);
@@ -29,11 +29,11 @@ function b(t) {
   });
 }
 function Q(t) {
-  const a = o();
+  const a = i();
   return y({
     queryKey: r.detail(t),
     queryFn: async () => {
-      const { data: e, error: s } = await a.schema("hf").from("tasks").select("*").eq("id", t).single();
+      const { data: e, error: s } = await a.schema("fund_ai").from("p_tasks_tasks").select("*").eq("id", t).single();
       if (s) throw s;
       return e;
     },
@@ -41,11 +41,11 @@ function Q(t) {
   });
 }
 function g(t) {
-  const a = o();
+  const a = i();
   return y({
     queryKey: r.comments(t),
     queryFn: async () => {
-      const { data: e, error: s } = await a.schema("hf").from("task_comments").select("*").eq("task_id", t).order("created_at", { ascending: !1 });
+      const { data: e, error: s } = await a.schema("fund_ai").from("p_tasks_comments").select("*").eq("task_id", t).order("created_at", { ascending: !1 });
       if (s) throw s;
       return e;
     },
@@ -53,11 +53,11 @@ function g(t) {
   });
 }
 function K(t) {
-  const a = o();
+  const a = i();
   return y({
     queryKey: r.history(t),
     queryFn: async () => {
-      const { data: e, error: s } = await a.schema("hf").from("task_history").select("*").eq("task_id", t).order("changed_at", { ascending: !1 });
+      const { data: e, error: s } = await a.schema("fund_ai").from("p_tasks_history").select("*").eq("task_id", t).order("changed_at", { ascending: !1 });
       if (s) throw s;
       return e;
     },
@@ -65,10 +65,10 @@ function K(t) {
   });
 }
 function v() {
-  const t = o(), a = m();
+  const t = i(), a = m();
   return l({
     mutationFn: async (e) => {
-      const { data: s, error: n } = await t.schema("hf").from("tasks").insert(e).select().single();
+      const { data: s, error: n } = await t.schema("fund_ai").from("p_tasks_tasks").insert(e).select().single();
       if (n) throw n;
       return s;
     },
@@ -78,29 +78,29 @@ function v() {
   });
 }
 function F() {
-  const t = o(), a = m();
+  const t = i(), a = m();
   return l({
     mutationFn: async ({
       id: e,
       updates: s,
       userId: n
     }) => {
-      const { data: u, error: c } = await t.schema("hf").from("tasks").select("*").eq("id", e).single();
+      const { data: u, error: c } = await t.schema("fund_ai").from("p_tasks_tasks").select("*").eq("id", e).single();
       if (c) throw c;
-      const { data: q, error: f } = await t.schema("hf").from("tasks").update(s).eq("id", e).select().single();
-      if (f) throw f;
-      const h = Object.keys(s).filter((i) => u[i] !== s[i]).map((i) => ({
+      const { data: h, error: d } = await t.schema("fund_ai").from("p_tasks_tasks").update(s).eq("id", e).select().single();
+      if (d) throw d;
+      const f = Object.keys(s).filter((o) => u[o] !== s[o]).map((o) => ({
         task_id: e,
-        field_name: i,
-        old_value: String(u[i] || ""),
-        new_value: String(s[i] || ""),
+        field_name: o,
+        old_value: String(u[o] || ""),
+        new_value: String(s[o] || ""),
         changed_by: n
       }));
-      if (h.length > 0) {
-        const { error: i } = await t.schema("hf").from("task_history").insert(h);
-        i && console.error("Failed to save history:", i);
+      if (f.length > 0) {
+        const { error: o } = await t.schema("fund_ai").from("p_tasks_history").insert(f);
+        o && console.error("Failed to save history:", o);
       }
-      return q;
+      return h;
     },
     onSuccess: (e) => {
       a.invalidateQueries({ queryKey: r.all }), a.invalidateQueries({ queryKey: r.detail(e.id) }), a.invalidateQueries({ queryKey: r.history(e.id) });
@@ -108,10 +108,10 @@ function F() {
   });
 }
 function C() {
-  const t = o(), a = m();
+  const t = i(), a = m();
   return l({
     mutationFn: async (e) => {
-      const { data: s, error: n } = await t.schema("hf").from("task_comments").insert(e).select().single();
+      const { data: s, error: n } = await t.schema("fund_ai").from("p_tasks_comments").insert(e).select().single();
       if (n) throw n;
       return s;
     },
@@ -121,11 +121,11 @@ function C() {
   });
 }
 function T() {
-  const t = o(), a = m();
+  const t = i(), a = m();
   return l({
     mutationFn: async (e) => {
-      await t.schema("hf").from("task_comments").delete().eq("task_id", e), await t.schema("hf").from("task_history").delete().eq("task_id", e);
-      const { error: s } = await t.schema("hf").from("tasks").delete().eq("id", e);
+      await t.schema("fund_ai").from("p_tasks_comments").delete().eq("task_id", e), await t.schema("fund_ai").from("p_tasks_history").delete().eq("task_id", e);
+      const { error: s } = await t.schema("fund_ai").from("p_tasks_tasks").delete().eq("id", e);
       if (s) throw s;
       return e;
     },
@@ -135,10 +135,10 @@ function T() {
   });
 }
 function S() {
-  const t = o(), a = m();
+  const t = i(), a = m();
   return l({
     mutationFn: async ({ id: e, comment: s }) => {
-      const { data: n, error: u } = await t.schema("hf").from("task_comments").update({ comment: s }).eq("id", e).select().single();
+      const { data: n, error: u } = await t.schema("fund_ai").from("p_tasks_comments").update({ comment: s }).eq("id", e).select().single();
       if (u) throw u;
       return n;
     },
@@ -148,7 +148,7 @@ function S() {
   });
 }
 function M() {
-  const t = o();
+  const t = i();
   return y({
     queryKey: ["users"],
     queryFn: async () => {

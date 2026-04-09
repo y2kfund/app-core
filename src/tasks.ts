@@ -61,8 +61,8 @@ export function useTasksQuery(
       const filterValue = filters ? unref(filters) : {}
       
       let query = supabase
-        .schema('hf')
-        .from('tasks')
+        .schema('fund_ai')
+        .from('p_tasks_tasks')
         .select('*')
         .order('created_at', { ascending: false })
       
@@ -92,8 +92,8 @@ export function useTaskQuery(id: string) {
     queryKey: taskQueryKeys.detail(id),
     queryFn: async () => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('tasks')
+        .schema('fund_ai')
+        .from('p_tasks_tasks')
         .select('*')
         .eq('id', id)
         .single()
@@ -113,8 +113,8 @@ export function useTaskCommentsQuery(taskId: string) {
     queryKey: taskQueryKeys.comments(taskId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('task_comments')
+        .schema('fund_ai')
+        .from('p_tasks_comments')
         .select('*')
         .eq('task_id', taskId)
         .order('created_at', { ascending: false })
@@ -134,8 +134,8 @@ export function useTaskHistoryQuery(taskId: string) {
     queryKey: taskQueryKeys.history(taskId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('task_history')
+        .schema('fund_ai')
+        .from('p_tasks_history')
         .select('*')
         .eq('task_id', taskId)
         .order('changed_at', { ascending: false })
@@ -155,8 +155,8 @@ export function useCreateTaskMutation() {
   return useMutation({
     mutationFn: async (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('tasks')
+        .schema('fund_ai')
+        .from('p_tasks_tasks')
         .insert(task)
         .select()
         .single()
@@ -187,8 +187,8 @@ export function useUpdateTaskMutation() {
     }) => {
       // Get current task to track changes
       const { data: currentTask, error: fetchError } = await supabase
-        .schema('hf')
-        .from('tasks')
+        .schema('fund_ai')
+        .from('p_tasks_tasks')
         .select('*')
         .eq('id', id)
         .single()
@@ -197,8 +197,8 @@ export function useUpdateTaskMutation() {
 
       // Update the task
       const { data, error } = await supabase
-        .schema('hf')
-        .from('tasks')
+        .schema('fund_ai')
+        .from('p_tasks_tasks')
         .update(updates)
         .eq('id', id)
         .select()
@@ -219,8 +219,8 @@ export function useUpdateTaskMutation() {
 
       if (historyEntries.length > 0) {
         const { error: historyError } = await supabase
-          .schema('hf')
-          .from('task_history')
+          .schema('fund_ai')
+          .from('p_tasks_history')
           .insert(historyEntries)
         
         if (historyError) console.error('Failed to save history:', historyError)
@@ -244,8 +244,8 @@ export function useAddCommentMutation() {
   return useMutation({
     mutationFn: async (comment: Omit<TaskComment, 'id' | 'created_at'>) => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('task_comments')
+        .schema('fund_ai')
+        .from('p_tasks_comments')
         .insert(comment)
         .select()
         .single()
@@ -268,22 +268,22 @@ export function useDeleteTaskMutation() {
     mutationFn: async (id: string) => {
       // Delete comments first
       await supabase
-        .schema('hf')
-        .from('task_comments')
+        .schema('fund_ai')
+        .from('p_tasks_comments')
         .delete()
         .eq('task_id', id)
 
       // Delete history
       await supabase
-        .schema('hf')
-        .from('task_history')
+        .schema('fund_ai')
+        .from('p_tasks_history')
         .delete()
         .eq('task_id', id)
 
       // Delete task
       const { error } = await supabase
-        .schema('hf')
-        .from('tasks')
+        .schema('fund_ai')
+        .from('p_tasks_tasks')
         .delete()
         .eq('id', id)
       
@@ -303,8 +303,8 @@ export function useUpdateCommentMutation() {
   return useMutation({
     mutationFn: async ({ id, comment }: { id: string; comment: string }) => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('task_comments')
+        .schema('fund_ai')
+        .from('p_tasks_comments')
         .update({ comment })
         .eq('id', id)
         .select()

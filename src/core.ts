@@ -82,7 +82,7 @@ export interface Trade {
   id: string
   accountId: string
   internal_account_id: string
-  legal_entity?: string  // Legal entity name from user_accounts_master
+  legal_entity?: string  // Legal entity name from core_accounts_master
   symbol: string
   assetCategory: string
   quantity: string  // Note: quantity is text in DB
@@ -186,8 +186,8 @@ export async function fetchUserAccessibleAccounts(
     console.log('👤 Fetching accessible accounts for user:', userId)
 
     const { data: accessData, error } = await supabase
-      .schema('hf')
-      .from('user_account_access')
+      .schema('fund_ai')
+      .from('core_accounts_access')
       .select('internal_account_id')
       .eq('user_id', userId)
       .eq('is_active', true)
@@ -228,8 +228,8 @@ export function useThesisQuery() {
     queryKey: key,
     queryFn: async (): Promise<Thesis[]> => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('thesisMaster')
+        .schema('fund_ai')
+        .from('p_thesis_master')
         .select('*')
         .order('title')
 
@@ -255,8 +255,8 @@ export function useThesisConnectionsQuery() {
     queryKey: key,
     queryFn: async (): Promise<ThesisConnection[]> => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('positionsAndThesisConnection')
+        .schema('fund_ai')
+        .from('p_positions_thesis_connections')
         .select('*')
         .order('symbol_root')
 
@@ -291,8 +291,8 @@ export async function fetchPositionPositionMappings(
 ): Promise<Map<string, Set<string>>> {
   try {
     const { data, error } = await supabase
-      .schema('hf')
-      .from('position_position_mappings')
+      .schema('fund_ai')
+      .from('p_positions_position_mappings')
       .select('mapping_key, attached_position_key')
       .eq('user_id', userId)
 
@@ -329,8 +329,8 @@ export async function savePositionPositionMappings(
   try {
     // Delete existing mappings
     const { error: deleteError } = await supabase
-      .schema('hf')
-      .from('position_position_mappings')
+      .schema('fund_ai')
+      .from('p_positions_position_mappings')
       .delete()
       .eq('user_id', userId)
       .eq('mapping_key', mappingKey)
@@ -350,8 +350,8 @@ export async function savePositionPositionMappings(
       }))
 
       const { error: upsertError } = await supabase
-        .schema('hf')
-        .from('position_position_mappings')
+        .schema('fund_ai')
+        .from('p_positions_position_mappings')
         .upsert(records, {
           onConflict: 'user_id,mapping_key,attached_position_key',
           ignoreDuplicates: false
@@ -396,8 +396,8 @@ export async function fetchPositionTradeMappings(
 ): Promise<Map<string, Set<string>>> {
   try {
     const { data, error } = await supabase
-      .schema('hf')
-      .from('position_trade_mappings')
+      .schema('fund_ai')
+      .from('p_positions_trade_mappings')
       .select('mapping_key, trade_id')
       .eq('user_id', userId)
 
@@ -434,8 +434,8 @@ export async function savePositionTradeMappings(
   try {
     // First, delete existing mappings for this position
     const { error: deleteError } = await supabase
-      .schema('hf')
-      .from('position_trade_mappings')
+      .schema('fund_ai')
+      .from('p_positions_trade_mappings')
       .delete()
       .eq('user_id', userId)
       .eq('mapping_key', mappingKey)
@@ -456,8 +456,8 @@ export async function savePositionTradeMappings(
 
       // Use upsert to handle any race conditions
       const { error: upsertError } = await supabase
-        .schema('hf')
-        .from('position_trade_mappings')
+        .schema('fund_ai')
+        .from('p_positions_trade_mappings')
         .upsert(records, {
           onConflict: 'user_id,mapping_key,trade_id',
           ignoreDuplicates: false // Update the updated_at if already exists
@@ -516,8 +516,8 @@ export function useSymbolCommentsQuery(userId: string) {
     queryKey: ['symbolComments', userId],
     queryFn: async (): Promise<SymbolComment[]> => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('positions_symbol_comments')
+        .schema('fund_ai')
+        .from('p_positions_symbol_comments')
         .select('*')
         .eq('user_id', userId)
       if (error) throw error
@@ -530,8 +530,8 @@ export function useSymbolCommentsQuery(userId: string) {
 // Upsert a comment for a symbol root
 export async function upsertSymbolComment(supabase: any, commentKey: string, user_id: string, comment: string) {
   const { error } = await supabase
-    .schema('hf')
-    .from('positions_symbol_comments')
+    .schema('fund_ai')
+    .from('p_positions_symbol_comments')
     .upsert({
       comment_key: commentKey,
       user_id,
@@ -547,8 +547,8 @@ export async function fetchPositionOrderMappings(
 ): Promise<Map<string, Set<string>>> {
   try {
     const { data, error } = await supabase
-      .schema('hf')
-      .from('position_order_mappings')
+      .schema('fund_ai')
+      .from('p_positions_order_mappings')
       .select('mapping_key, order_id')
       .eq('user_id', userId)
 
@@ -583,8 +583,8 @@ export async function savePositionOrderMappings(
   try {
     // Delete existing mappings for this position
     const { error: deleteError } = await supabase
-      .schema('hf')
-      .from('position_order_mappings')
+      .schema('fund_ai')
+      .from('p_positions_order_mappings')
       .delete()
       .eq('user_id', userId)
       .eq('mapping_key', mappingKey)
@@ -604,8 +604,8 @@ export async function savePositionOrderMappings(
       }))
 
       const { error: upsertError } = await supabase
-        .schema('hf')
-        .from('position_order_mappings')
+        .schema('fund_ai')
+        .from('p_positions_order_mappings')
         .upsert(records, {
           onConflict: 'user_id,mapping_key,order_id',
           ignoreDuplicates: false
@@ -668,8 +668,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
       let accountIds: string[] = accessibleAccountIds
       if (accountIds.length === 0) {
         const { data: allAccounts, error: allAccountsError } = await supabase
-          .schema('hf')
-          .from('positions')
+          .schema('fund_ai')
+          .from('p_positions_positions')
           .select('internal_account_id')
           .neq('internal_account_id', null)
           .then((res) => ({ data: res.data?.map((r: any) => r.internal_account_id) ?? [], error: res.error }))
@@ -683,8 +683,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
       // Filter out archived accounts
       if (accountIds.length > 0) {
         const { data: activeAccounts, error: archivedError } = await supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id')
           .in('internal_account_id', accountIds)
           .eq('archived', false)
@@ -704,7 +704,7 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
       if (asOf) {
         // Get the latest fetched_at <= asOfDate for each account
         const { data, error } = await supabase
-          .schema('hf')
+          .schema('fund_ai')
           .rpc('get_latest_fetched_at_per_account', {
             account_ids: accountIds,
             as_of_date: asOf
@@ -717,8 +717,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
       } else {
         // For latest fetched_at
         const { data, error } = await supabase
-          .schema('hf')
-          .from('positions')
+          .schema('fund_ai')
+          .from('p_positions_positions')
           .select('internal_account_id, fetched_at')
           .in('internal_account_id', accountIds)
           .order('fetched_at', { ascending: false })
@@ -741,8 +741,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
       const positionsPromises = Array.from(latestFetchedAtMap.entries()).map(
         ([accountId, fetchedAt]) =>
           supabase
-            .schema('hf')
-            .from('positions')
+            .schema('fund_ai')
+            .from('p_positions_positions')
             .select('*')
             .eq('internal_account_id', accountId)
             .eq('fetched_at', fetchedAt)
@@ -752,8 +752,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
 
       console.log('🔍 Querying positions with config:', {
         accountId,
-        schema: 'hf',
-        table: 'positions',
+        schema: 'fund_ai',
+        table: 'p_positions_positions',
         userId: userId || 'none',
         accessibleAccountIds: accessibleAccountIds.length > 0 ? accessibleAccountIds : 'all'
       })
@@ -762,24 +762,24 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
       const [posRes, acctRes, thesisRes, thesisConnectionsRes, marketPriceRes, aliasRes] = await Promise.all([
         positionsResults[0],
         supabase
-          .schema('hf')
-          .from('user_accounts_master')
+          .schema('fund_ai')
+          .from('core_accounts_master')
           .select('internal_account_id, legal_entity'),
         supabase
-          .schema('hf')
-          .from('thesisMaster')
+          .schema('fund_ai')
+          .from('p_thesis_master')
           .select('id, title, description'),
         supabase
-          .schema('hf')
-          .from('positionsAndThesisConnection')
+          .schema('fund_ai')
+          .from('p_positions_thesis_connections')
           .select('*'),
         supabase
-          .schema('hf')
+          .schema('fund_ai')
           .rpc('get_latest_market_prices'),
         userId
           ? supabase
-            .schema('hf')
-            .from('user_account_alias')
+            .schema('fund_ai')
+            .from('core_accounts_alias')
             .select('internal_account_id, alias')
             .eq('user_id', userId)
           : { data: [], error: null }
@@ -907,8 +907,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
     .channel(`positions:${accountId}`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'positions',
+        schema: 'fund_ai',
+        table: 'p_positions_positions',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })
@@ -919,8 +919,8 @@ export function usePositionsQuery(accountId: string, userId?: string | null, asO
     .channel('thesis-connections')
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'positionsAndThesisConnection',
+        schema: 'fund_ai',
+        table: 'p_positions_thesis_connections',
         event: '*',
       },
       () => qc.invalidateQueries({ queryKey: key })
@@ -954,8 +954,8 @@ export async function fetchPositionsBySymbolRoot(
 
     // Step 2: Build the query - filter by symbol pattern and account
     let query = supabase
-      .schema('hf')
-      .from('positions')
+      .schema('fund_ai')
+      .from('p_positions_positions')
       .select('*')
       .ilike('symbol', `${symbolRoot}%`) // Symbol starts with the root
 
@@ -1003,13 +1003,13 @@ export async function fetchPositionsBySymbolRoot(
     // Step 6: Fetch account data and aliases
     const [acctRes, aliasRes] = await Promise.all([
       supabase
-        .schema('hf')
-        .from('user_accounts_master')
+        .schema('fund_ai')
+        .from('core_accounts_master')
         .select('internal_account_id, legal_entity'),
       userId
         ? supabase
-          .schema('hf')
-          .from('user_account_alias')
+          .schema('fund_ai')
+          .from('core_accounts_alias')
           .select('internal_account_id, alias')
           .eq('user_id', userId)
         : { data: [], error: null }
@@ -1067,11 +1067,11 @@ export function useTradesQuery(accountId: string) {
     queryKey: key,
     queryFn: async (): Promise<Trade[]> => {
       const { data, error } = await supabase
-        .schema('hf')
-        .from('trades')
+        .schema('fund_ai')
+        .from('p_trades_trades')
         .select('*')
-        .eq('account_id', accountId)
-        .order('trade_date', { ascending: false })
+        .eq('internal_account_id', accountId)
+        .order('"tradeDate"', { ascending: false })
 
       if (error) throw error
       return data || []
@@ -1083,10 +1083,10 @@ export function useTradesQuery(accountId: string) {
     .channel(`trades:${accountId}`)
     .on('postgres_changes',
       {
-        schema: 'hf',
-        table: 'trades',
+        schema: 'fund_ai',
+        table: 'p_trades_trades',
         event: '*',
-        filter: `account_id=eq.${accountId}`
+        filter: `internal_account_id=eq.${accountId}`
       },
       () => qc.invalidateQueries({ queryKey: key })
     )

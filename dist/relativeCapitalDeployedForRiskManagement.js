@@ -25,28 +25,28 @@ function x(e) {
       });
       const s = await $(n, e);
       e && s.length === 0 ? console.log("⚠️ User has no account access restrictions - showing all accounts") : s.length > 0 && console.log("🔒 User has access to accounts:", s);
-      const { data: h, error: d } = await n.schema("hf").from("positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1).single();
-      if (d)
-        throw console.error("❌ Error fetching latest fetched_at:", d), d;
-      if (!h || !h.fetched_at)
+      const { data: d, error: _ } = await n.schema("fund_ai").from("p_positions_positions").select("fetched_at").order("fetched_at", { ascending: !1 }).limit(1).single();
+      if (_)
+        throw console.error("❌ Error fetching latest fetched_at:", _), _;
+      if (!d || !d.fetched_at)
         return console.log("⚠️ No positions found in database"), [];
-      const E = h.fetched_at;
+      const E = d.fetched_at;
       console.log("📅 Latest fetched_at:", E);
-      let g = n.schema("hf").from("positions").select("*").eq("fetched_at", E).in("asset_class", ["STK", "OPT", "FUND"]);
-      s.length > 0 && (g = g.in("internal_account_id", s));
-      const { data: u, error: m } = await g;
-      if (m)
-        throw console.error("❌ Error fetching positions:", m), m;
+      let h = n.schema("fund_ai").from("p_positions_positions").select("*").eq("fetched_at", E).in("asset_class", ["STK", "OPT", "FUND"]);
+      s.length > 0 && (h = h.in("internal_account_id", s));
+      const { data: u, error: g } = await h;
+      if (g)
+        throw console.error("❌ Error fetching positions:", g), g;
       if (!u || u.length === 0)
         return console.log("📊 No positions found matching criteria"), [];
       console.log(`✅ Fetched ${u.length} position(s) from database`);
-      const y = u.filter(
+      const m = u.filter(
         (t) => U(t.symbol, t.asset_class)
       );
-      if (console.log(`🔽 Filtered to ${y.length} position(s) (STK + FUND + PUT options)`), y.length === 0)
+      if (console.log(`🔽 Filtered to ${m.length} position(s) (STK + FUND + PUT options)`), m.length === 0)
         return console.log("⚠️ No positions after filtering"), [];
       const a = /* @__PURE__ */ new Map();
-      y.forEach((t) => {
+      m.forEach((t) => {
         const o = S(t.symbol, t.asset_class);
         if (!o) return;
         const i = Math.abs(t.accounting_quantity ?? t.qty ?? 0);
@@ -57,15 +57,15 @@ function x(e) {
         const c = a.get(o);
         c.totalQuantity += i, c.positions.push(t);
       }), console.log(`📦 Grouped into ${a.size} unique symbol(s)`);
-      const [_, v] = await Promise.all([
-        n.schema("hf").from("user_accounts_master").select("internal_account_id, legal_entity"),
-        e ? n.schema("hf").from("user_account_alias").select("internal_account_id, alias").eq("user_id", e) : { data: [], error: null }
+      const [y, v] = await Promise.all([
+        n.schema("fund_ai").from("core_accounts_master").select("internal_account_id, legal_entity"),
+        e ? n.schema("fund_ai").from("core_accounts_alias").select("internal_account_id, alias").eq("user_id", e) : { data: [], error: null }
       ]);
-      _.error && console.error("⚠️ Error fetching accounts:", _.error);
+      y.error && console.error("⚠️ Error fetching accounts:", y.error);
       const b = new Map(
         (v.data || []).map((t) => [t.internal_account_id, t.alias])
       ), P = new Map(
-        (_.data || []).map((t) => [t.internal_account_id, t.legal_entity])
+        (y.data || []).map((t) => [t.internal_account_id, t.legal_entity])
       );
       console.log(`📋 Fetched ${P.size} account(s), ${b.size} alias(es)`), a.forEach((t) => {
         t.positions = t.positions.map((o) => {
@@ -86,16 +86,16 @@ function x(e) {
       if (q.length === 0)
         return console.log("⚠️ No unique symbols found"), [];
       console.log("💰 Fetching market prices for symbols:", q);
-      const { data: Q, error: T } = await n.schema("hf").from("market_price").select("symbol, market_price").in("symbol", q).order("id", { ascending: !1 });
+      const { data: Q, error: T } = await n.schema("fund_ai").from("p_positions_market_price").select("symbol, market_price").in("symbol", q).order("id", { ascending: !1 });
       T && console.warn("⚠️ Error fetching market prices:", T);
-      const f = /* @__PURE__ */ new Map();
+      const p = /* @__PURE__ */ new Map();
       Q && Q.forEach((t) => {
-        f.has(t.symbol) || f.set(t.symbol, t.market_price);
-      }), console.log(`📊 Fetched prices for ${f.size} symbol(s)`);
-      const p = [];
+        p.has(t.symbol) || p.set(t.symbol, t.market_price);
+      }), console.log(`📊 Fetched prices for ${p.size} symbol(s)`);
+      const f = [];
       a.forEach((t, o) => {
-        const i = f.get(o) ?? null, c = i ? t.totalQuantity * i : 0;
-        p.push({
+        const i = p.get(o) ?? null, c = i ? t.totalQuantity * i : 0;
+        f.push({
           symbolRoot: o,
           totalQuantity: t.totalQuantity,
           currentMarketPrice: i,
@@ -103,10 +103,10 @@ function x(e) {
           positionCount: t.positions.length,
           positions: t.positions
         });
-      }), p.sort((t, o) => o.capitalInvested - t.capitalInvested);
-      const w = p.slice(0, 20);
+      }), f.sort((t, o) => o.capitalInvested - t.capitalInvested);
+      const w = f.slice(0, 20);
       return console.log("✅ Top 20 positions by capital invested:", {
-        totalGroups: p.length,
+        totalGroups: f.length,
         top20Count: w.length,
         top20Symbols: w.map((t) => `${t.symbolRoot}: $${t.capitalInvested.toFixed(2)}`)
       }), w;
@@ -120,8 +120,8 @@ function x(e) {
   }), r = n.channel("top20-capital-deployed").on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "positions",
+      schema: "fund_ai",
+      table: "p_positions_positions",
       event: "*"
     },
     () => {

@@ -23,9 +23,9 @@ export interface ThesisCapitalGroup {
  * Workflow:
  * 1. Fetch top 20 positions by capital from useTop20PositionsByCapitalQuery
  * 2. Extract unique symbol roots
- * 3. Query positionsAndThesisConnection to get thesis_id for each symbol
- * 4. Query thesisMaster to get thesis titles and parent_thesis_id
- * 5. Query thesisMaster again to get parent thesis titles
+ * 3. Query p_positions_thesis_connections to get thesis_id for each symbol
+ * 4. Query p_thesis_master to get thesis titles and parent_thesis_id
+ * 5. Query p_thesis_master again to get parent thesis titles
  * 6. Group positions by thesis and sum capital
  * 7. Handle unassigned symbols (no thesis connection)
  * 8. Return sorted array of ThesisCapitalGroup for pie chart

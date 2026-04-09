@@ -118,8 +118,8 @@ export function usePEAnalysisQuery(userId: string | null) {
 
       // Step 3: Query financial_data table
       const { data: financialData, error: financialError } = await supabase
-        .schema('hf')
-        .from('financial_data')
+        .schema('fund_ai')
+        .from('p_positions_financial_data')
         .select('*')
         .in('symbol', symbolRoots)
 
@@ -251,8 +251,8 @@ export function usePEAnalysisQuery(userId: string | null) {
     .channel('pe-ratio-analysis')
     .on('postgres_changes',
       { 
-        schema: 'hf', 
-        table: 'positions', 
+        schema: 'fund_ai',
+        table: 'p_positions_positions',
         event: '*' 
       },
       () => {
@@ -262,8 +262,8 @@ export function usePEAnalysisQuery(userId: string | null) {
     )
     .on('postgres_changes',
       { 
-        schema: 'hf', 
-        table: 'financial_data', 
+        schema: 'fund_ai',
+        table: 'p_positions_financial_data',
         event: '*' 
       },
       () => {

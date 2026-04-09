@@ -27,24 +27,24 @@ function T(a) {
           }
         };
       console.log(`✅ Retrieved ${s.length} top positions`);
-      const R = s.map((e) => e.symbolRoot);
-      console.log("📋 Symbol roots:", R);
-      const { data: i, error: m } = await P.schema("hf").from("financial_data").select("*").in("symbol", R);
+      const _ = s.map((o) => o.symbolRoot);
+      console.log("📋 Symbol roots:", _);
+      const { data: n, error: m } = await P.schema("fund_ai").from("p_positions_financial_data").select("*").in("symbol", _);
       if (m)
         throw console.error("❌ Error fetching financial data:", m), m;
-      console.log(`💰 Found ${(i == null ? void 0 : i.length) || 0} financial data record(s)`);
-      const b = /* @__PURE__ */ new Map();
-      i && i.forEach((e) => {
-        b.set(e.symbol, e);
+      console.log(`💰 Found ${(n == null ? void 0 : n.length) || 0} financial data record(s)`);
+      const R = /* @__PURE__ */ new Map();
+      n && n.forEach((o) => {
+        R.set(o.symbol, o);
       });
-      const r = s.map((e) => {
-        const t = b.get(e.symbolRoot);
+      const r = s.map((o) => {
+        const t = R.get(o.symbolRoot);
         return {
-          symbolRoot: e.symbolRoot,
-          capitalInvested: e.capitalInvested,
-          totalQuantity: e.totalQuantity,
-          currentMarketPrice: e.currentMarketPrice,
-          positionCount: e.positionCount,
+          symbolRoot: o.symbolRoot,
+          capitalInvested: o.capitalInvested,
+          totalQuantity: o.totalQuantity,
+          currentMarketPrice: o.currentMarketPrice,
+          positionCount: o.positionCount,
           // Financial data (null if not found)
           peRatio: (t == null ? void 0 : t.pe_ratio) || null,
           eps: (t == null ? void 0 : t.eps) || null,
@@ -54,39 +54,39 @@ function T(a) {
           computedPegRatio: (t == null ? void 0 : t.computed_peg_ratio) || null,
           lastUpdatedAt: (t == null ? void 0 : t.last_updated_at) || null
         };
-      }), o = r.filter((e) => e.peRatio !== null), g = r.filter((e) => e.peRatio === null), v = r.reduce((e, t) => e + t.capitalInvested, 0), f = o.reduce((e, t) => e + t.capitalInvested, 0), _ = g.reduce((e, t) => e + t.capitalInvested, 0);
+      }), e = r.filter((o) => o.peRatio !== null), g = r.filter((o) => o.peRatio === null), b = r.reduce((o, t) => o + t.capitalInvested, 0), v = e.reduce((o, t) => o + t.capitalInvested, 0), f = g.reduce((o, t) => o + t.capitalInvested, 0);
       let u = null;
-      o.length > 0 && (u = o.reduce((t, p) => t + (p.peRatio || 0), 0) / o.length);
+      e.length > 0 && (u = e.reduce((t, p) => t + (p.peRatio || 0), 0) / e.length);
       let l = null;
-      if (o.length > 0) {
-        const e = o.map((p) => p.peRatio).sort((p, x) => p - x), t = Math.floor(e.length / 2);
-        e.length % 2 === 0 ? l = (e[t - 1] + e[t]) / 2 : l = e[t];
+      if (e.length > 0) {
+        const o = e.map((p) => p.peRatio).sort((p, x) => p - x), t = Math.floor(o.length / 2);
+        o.length % 2 === 0 ? l = (o[t - 1] + o[t]) / 2 : l = o[t];
       }
-      const c = o.length > 0 ? Math.min(...o.map((e) => e.peRatio)) : null, d = o.length > 0 ? Math.max(...o.map((e) => e.peRatio)) : null, w = {
-        positions: [...r].sort((e, t) => e.peRatio === null && t.peRatio !== null ? 1 : e.peRatio !== null && t.peRatio === null ? -1 : e.peRatio === null && t.peRatio === null ? t.capitalInvested - e.capitalInvested : e.peRatio - t.peRatio),
+      const c = e.length > 0 ? Math.min(...e.map((o) => o.peRatio)) : null, d = e.length > 0 ? Math.max(...e.map((o) => o.peRatio)) : null, w = {
+        positions: [...r].sort((o, t) => o.peRatio === null && t.peRatio !== null ? 1 : o.peRatio !== null && t.peRatio === null ? -1 : o.peRatio === null && t.peRatio === null ? t.capitalInvested - o.capitalInvested : o.peRatio - t.peRatio),
         statistics: {
           averagePE: u,
           medianPE: l,
           minPE: c,
           maxPE: d,
-          totalCapital: v,
-          capitalWithPE: f,
-          capitalWithoutPE: _,
-          symbolsWithPE: o.length,
+          totalCapital: b,
+          capitalWithPE: v,
+          capitalWithoutPE: f,
+          symbolsWithPE: e.length,
           symbolsWithoutPE: g.length
         }
       };
       return console.log("✅ P/E ratio analysis completed:", {
         totalPositions: r.length,
-        withPE: o.length,
+        withPE: e.length,
         withoutPE: g.length,
         averagePE: u == null ? void 0 : u.toFixed(2),
         medianPE: l == null ? void 0 : l.toFixed(2),
         minPE: c == null ? void 0 : c.toFixed(2),
         maxPE: d == null ? void 0 : d.toFixed(2),
-        totalCapital: `$${v.toFixed(2)}`,
-        capitalWithPE: `$${f.toFixed(2)}`,
-        capitalWithoutPE: `$${_.toFixed(2)}`
+        totalCapital: `$${b.toFixed(2)}`,
+        capitalWithPE: `$${v.toFixed(2)}`,
+        capitalWithoutPE: `$${f.toFixed(2)}`
       }), w;
     },
     enabled: Q(() => !!y.data.value && y.data.value.length > 0),
@@ -94,11 +94,11 @@ function T(a) {
     staleTime: 6e4,
     // 1 minute cache
     retry: 2
-  }), n = P.channel("pe-ratio-analysis").on(
+  }), i = P.channel("pe-ratio-analysis").on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "positions",
+      schema: "fund_ai",
+      table: "p_positions_positions",
       event: "*"
     },
     () => {
@@ -107,8 +107,8 @@ function T(a) {
   ).on(
     "postgres_changes",
     {
-      schema: "hf",
-      table: "financial_data",
+      schema: "fund_ai",
+      table: "p_positions_financial_data",
       event: "*"
     },
     () => {
@@ -119,7 +119,7 @@ function T(a) {
     ...W,
     _cleanup: () => {
       var s;
-      console.log("🧹 Cleaning up P/E analysis subscription"), (s = n == null ? void 0 : n.unsubscribe) == null || s.call(n);
+      console.log("🧹 Cleaning up P/E analysis subscription"), (s = i == null ? void 0 : i.unsubscribe) == null || s.call(i);
     }
   };
 }
